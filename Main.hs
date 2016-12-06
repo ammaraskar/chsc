@@ -33,7 +33,8 @@ main :: IO ()
 main = do
     hPutStrLn stderr $ "Welcome to the Cool Cambridge Haskell Supercompiler (" ++ cODE_IDENTIFIER ++ ")"
     (flags, args) <- fmap (partition ("-" `isPrefixOf`)) getArgs
-    putStrLn $ intercalate " " flags
+    --putStrLn $ intercalate " " flags
+    putStrLn $ unwords flags
     case args of
       []            -> putStrLn "TODO: usage"
       ("ghc":files) -> test (True,  False) files
@@ -43,7 +44,7 @@ main = do
 test :: Ways -> [FilePath] -> IO ()
 test ways files = do
     putStrLn $ intercalate " & " ["Filename", "SC time", "Reduce-stops", "SC-stops", "Compile time", "Run time", "Heap size", "Term size"] ++ " \\\\"
-    test_errors <- concatMapM (\file -> liftM (maybeToList . fmap (file,)) $ testOne ways file) files
+    test_errors <- concatMapM (\file -> fmap (maybeToList . fmap (file,)) $ testOne ways file) files
     unless (null test_errors) $ do
         hPutStrLn stderr $ "WARNING: " ++ show (length test_errors) ++ " test failures:"
         mapM_ (\(fp, err) -> hPutStrLn stderr (fp ++ ": " ++ err)) test_errors
@@ -138,3 +139,5 @@ testOne (ghc_way, sc_way) file = do
                 putStrLn $ showRaw mb_res
                 return mb_err
             (False, False) -> error "testOne: invalid way"
+
+

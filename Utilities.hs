@@ -26,8 +26,8 @@ import Control.Monad hiding (join)
 
 import qualified Data.Graph.Wrapper as G
 import Data.Maybe
-import Data.Monoid
-import Data.List
+import Data.Monoid hiding ((<>))
+import Data.List hiding (uncons)
 import qualified Data.IntMap as IM
 import qualified Data.IntSet as IS
 import qualified Data.Map as M
@@ -39,7 +39,7 @@ import qualified Data.Traversable as Traversable
 
 import Debug.Trace
 
-import Text.PrettyPrint.HughesPJClass hiding (render, int, float, char)
+import Text.PrettyPrint.HughesPJClass hiding (render, int, float, char, first)
 import qualified Text.PrettyPrint.HughesPJClass as Pretty
 
 import System.IO
@@ -681,8 +681,23 @@ instance Pretty1 Identity where
 instance Copointed Identity where
     extract = unI
 
+--instance Functor Identity where
+  -- fmap :: (a -> b) -> f a -> f b
+--  fmap f x = error "asdf"
+
+instance Applicative Identity where
+  pure = I
+  -- f (a -> b) -> f a -> f b
+  -- m (a -> b) -> m a -> m b
+  -- unI :: m a -> a
+  -- Maybe fix me: implementation ok?
+  f <*> a = I (unI f (unI a))
+
 instance Monad Identity where
     return = I
+
+    -- m a -> (a -> m b) -> m b
+    -- unI :: m a -> a
     mx >>= fxmy = fxmy (unI mx)
 
 
