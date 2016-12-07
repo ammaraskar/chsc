@@ -1,4 +1,6 @@
 {-# LANGUAGE PatternGuards, ViewPatterns, Rank2Types, TupleSections, GADTs, DeriveFunctor, DeriveFoldable, ScopedTypeVariables, TypeSynonymInstances, GeneralizedNewtypeDeriving, TypeFamilies, FlexibleContexts, RankNTypes #-}
+{-# LANGUAGE DeriveTraversable #-}
+
 module Termination.Terminate where
 
 import Utilities

@@ -111,12 +111,12 @@ instance Pretty PrimOp where
 
 instance Pretty AltCon where
     pPrintPrec level prec altcon = case altcon of
-        DataAlt dc xs   -> prettyParen (prec >= appPrec) $ text dc <+> hsep (map (pPrintPrec level appPrec) xs)
+        DataAlt dc xs   -> maybeParens (prec >= appPrec) $ text dc <+> hsep (map (pPrintPrec level appPrec) xs)
         LiteralAlt l    -> pPrint l
         DefaultAlt mb_x -> maybe (text "_") (pPrintPrec level prec) mb_x
 
 instance Pretty Literal where
-    pPrintPrec level prec (Int i) | level == haskellLevel = prettyParen (prec >= appPrec) $ pPrintPrec level appPrec i <+> text ":: Int"
+    pPrintPrec level prec (Int i) | level == haskellLevel = maybeParens (prec >= appPrec) $ pPrintPrec level appPrec i <+> text ":: Int"
                                   | otherwise             = pPrintPrec level prec i
     pPrintPrec _     _    (Char c) = text $ show c
 
@@ -136,13 +136,13 @@ pPrintPrecSeq :: (Pretty a, Pretty b) => PrettyLevel -> Rational -> a -> b -> Do
 pPrintPrecSeq level prec e1 e2 = pPrintPrecApp level prec (PrettyFunction $ \level prec -> pPrintPrecApp level prec (name "seq") e1) e2
 
 pPrintPrecApp :: (Pretty a, Pretty b) => PrettyLevel -> Rational -> a -> b -> Doc
-pPrintPrecApp level prec e1 e2 = prettyParen (prec >= appPrec) $ pPrintPrec level opPrec e1 <+> pPrintPrec level appPrec e2
+pPrintPrecApp level prec e1 e2 = maybeParens (prec >= appPrec) $ pPrintPrec level opPrec e1 <+> pPrintPrec level appPrec e2
 
 pPrintPrecPrimOp :: (Pretty a, Pretty b) => PrettyLevel -> Rational -> a -> [b] -> Doc
 pPrintPrecPrimOp level prec pop xs = pPrintPrecApps level prec pop xs
 
 pPrintPrecCase :: (Pretty a, Pretty b, Pretty c) => PrettyLevel -> Rational -> a -> [(b, c)] -> Doc
-pPrintPrecCase level prec e alts = prettyParen (prec > noPrec) $ hang (text "case" <+> pPrintPrec level noPrec e <+> text "of") 2 $ vcat (map (pPrintPrecAlt level noPrec) alts)
+pPrintPrecCase level prec e alts = maybeParens (prec > noPrec) $ hang (text "case" <+> pPrintPrec level noPrec e <+> text "of") 2 $ vcat (map (pPrintPrecAlt level noPrec) alts)
 
 pPrintPrecAlt :: (Pretty a, Pretty b) => PrettyLevel -> Rational -> (a, b) -> Doc
 pPrintPrecAlt level _ (alt_con, alt_e) = hang (pPrintPrec level noPrec alt_con <+> text "->") 2 (pPrintPrec level noPrec alt_e)
@@ -150,7 +150,7 @@ pPrintPrecAlt level _ (alt_con, alt_e) = hang (pPrintPrec level noPrec alt_con <
 pPrintPrecLetRec :: (Pretty a, Pretty b, Pretty c) => PrettyLevel -> Rational -> [(a, b)] -> c -> Doc
 pPrintPrecLetRec level prec xes e_body
   | [] <- xes = pPrintPrec level prec e_body
-  | otherwise = prettyParen (prec > noPrec) $ hang (if level == haskellLevel then text "let" else text "letrec") 2 (vcat [pPrintPrec level noPrec x <+> text "=" <+> pPrintPrec level noPrec e | (x, e) <- xes]) $$ text "in" <+> pPrintPrec level noPrec e_body
+  | otherwise = maybeParens (prec > noPrec) $ hang (if level == haskellLevel then text "let" else text "letrec") 2 (vcat [pPrintPrec level noPrec x <+> text "=" <+> pPrintPrec level noPrec e | (x, e) <- xes]) $$ text "in" <+> pPrintPrec level noPrec e_body
 
 instance Pretty1 ann => Pretty (ValueF ann) where
     pPrintPrec level prec v = case v of
@@ -163,10 +163,10 @@ instance Pretty1 ann => Pretty (ValueF ann) where
         Literal l     -> pPrintPrec level prec l
 
 pPrintPrecLam :: Pretty a => PrettyLevel -> Rational -> [Var] -> a -> Doc
-pPrintPrecLam level prec xs e = prettyParen (prec > noPrec) $ text "\\" <> hsep [pPrintPrec level appPrec y | y <- xs] <+> text "->" <+> pPrintPrec level noPrec e
+pPrintPrecLam level prec xs e = maybeParens (prec > noPrec) $ text "\\" <> hsep [pPrintPrec level appPrec y | y <- xs] <+> text "->" <+> pPrintPrec level noPrec e
 
 pPrintPrecApps :: (Pretty a, Pretty b) => PrettyLevel -> Rational -> a -> [b] -> Doc
-pPrintPrecApps level prec e1 es2 = prettyParen (not (null es2) && prec >= appPrec) $ pPrintPrec level opPrec e1 <+> hsep (map (pPrintPrec level appPrec) es2)
+pPrintPrecApps level prec e1 es2 = maybeParens (not (null es2) && prec >= appPrec) $ pPrintPrec level opPrec e1 <+> hsep (map (pPrintPrec level appPrec) es2)
 
 
 altConBinders :: AltCon -> [Var]

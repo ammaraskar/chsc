@@ -19,7 +19,17 @@ import qualified Data.Set as S
 newtype Match a = Match { unMatch :: Maybe a }
 
 instance Functor Match where
-    fmap = liftM
+  -- fmap :: (a -> b) -> f a -> f b
+  --fmap = liftM
+  fmap f x = x >>= return . f
+
+instance Applicative Match where
+  -- pure :: a -> f a
+  pure = return
+  -- >>= :: m a -> (a -> m b) -> m b
+  -- <*> :: m (a -> b) -> m a -> m b
+  -- f ( a -> a') -> ( (a -> a') -> f b ) -> f b
+  mf <*> mx = mf >>= (\f -> fmap f mx)
 
 instance Monad Match where
     return = Match . return

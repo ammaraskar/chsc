@@ -24,7 +24,7 @@ void find_graph_subisomorphisms(int smaller_nodes_count, int *smaller_colors, in
     
     // Obtain the isomorphisms
     //igraph_get_subisomorphisms_vf2(&larger_graph, &smaller_graph, &larger_colors_vector, &smaller_colors_vector, NULL, NULL, &maps);
-    igraph_subisomorphic_function_vf2(&larger_graph, &smaller_graph, &larger_colors_vector, &smaller_colors_vector, NULL, NULL, NULL, NULL, (igraph_isohandler_t*)find_callback, callback);
+    igraph_subisomorphic_function_vf2(&larger_graph, &smaller_graph, &larger_colors_vector, &smaller_colors_vector, NULL, NULL, NULL, NULL, NULL, NULL, (igraph_isohandler_t*)find_callback, callback);
 
     // Destroy graphs (we don't need to destroy vectors since they are all views)
     igraph_destroy(&larger_graph);

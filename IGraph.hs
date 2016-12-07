@@ -11,6 +11,7 @@ import qualified Data.Map as M
 
 import Foreign.C
 import Foreign.Marshal
+import Foreign.Marshal.Unsafe
 import Foreign.Ptr
 
 import qualified Data.Graph.Wrapper as G
