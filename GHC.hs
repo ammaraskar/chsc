@@ -15,8 +15,8 @@ import System.Process
 
 
 gHC :: FilePath
-gHC = "/Users/mbolingbroke/Programming/Checkouts/ghc.head/inplace/bin/ghc-stage2"
-
+-- gHC = "/Users/mbolingbroke/Programming/Checkouts/ghc.head/inplace/bin/ghc-stage2"
+gHC = "/usr/local/bin/ghc"
 
 termToHaskell :: Term -> String
 termToHaskell = show . pPrintPrec haskellLevel 0
