@@ -199,6 +199,8 @@ declCore d@(LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e) Nothi
   -- panic "declCore@FunBind/Nothing" (text $ show d)
   declCore (LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e) 
     (Just (LHE.BDecls _l [])) ])
+declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) Nothing) =
+  declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l []))) 
 declCore d = panic "declCore" (text $ show d)
 
 expCore :: LHE.Exp LHE.SrcSpanInfo -> ParseM Term
@@ -237,6 +239,9 @@ altCore (LHE.Alt _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l' binds)))
     (altcon, build) <- altPatCore pat
     e <- bindFloatsWith $ liftM2 (,) (declsCore binds) (expCore e)
     return (altcon, build e)
+altCore (LHE.Alt _loc pat (LHE.UnGuardedRhs _l e) Nothing) =
+  altCore (LHE.Alt _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l [])))
+altCore p = panic "altCore" (text $ show p)
 
 -- | For irrefutible pattern matches a single level deep, where we need to make a choice based on the outer constructor *only*:
 altPatCore :: LHE.Pat LHE.SrcSpanInfo -> ParseM (AltCon, Term -> Term)
