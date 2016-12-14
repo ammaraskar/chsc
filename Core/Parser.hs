@@ -19,20 +19,19 @@ import Language.Preprocessor.Cpphs
 import System.Directory
 import System.FilePath (replaceExtension)
 
-
 parse :: FilePath -> IO (String, [(Var, Term)])
 parse path = do
     -- Read and pre-process .core file
     contents <- readFile path >>= cpp
     unless qUIET $ putStrLn contents
-    
+
     -- Read and pre-process corresponding .hs file (if any)
     let wrapper_path = replaceExtension path ".hs"
     has_wrapper <- doesFileExist wrapper_path
     wrapper <- if has_wrapper then readFile wrapper_path >>= cpp else return ""
-    
+
     -- Return parsed .core file
-    return (wrapper, moduleCore . LHE.fromParseResult . LHE.parseFileContentsWithMode (LHE.defaultParseMode { LHE.parseFilename = path, LHE.extensions = 
+    return (wrapper, moduleCore . LHE.fromParseResult . LHE.parseFileContentsWithMode (LHE.defaultParseMode { LHE.parseFilename = path, LHE.extensions =
       [LHE.EnableExtension LHE.CPP, LHE.EnableExtension LHE.MagicHash] }) $ contents)
   where cpp = runCpphs (defaultCpphsOptions { boolopts = (boolopts defaultCpphsOptions) { locations = False }, defines = ("SUPERCOMPILE", "1") : defines defaultCpphsOptions }) path
 
@@ -197,11 +196,13 @@ declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) _binds@(Just (LHE.BDecls 
     return $ (x, e) : [(n, build (var n)) | n <- bound_ns, n /= x]
 declCore d@(LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e) Nothing]) =
   -- panic "declCore@FunBind/Nothing" (text $ show d)
-  declCore (LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e) 
+  declCore (LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e)
     (Just (LHE.BDecls _l [])) ])
 declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) Nothing) =
-  declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l []))) 
+  declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l [])))
+declCore (LHE.TypeDecl _l _declhead _type) = return []
 declCore d = panic "declCore" (text $ show d)
+
 
 expCore :: LHE.Exp LHE.SrcSpanInfo -> ParseM Term
 expCore (LHE.Var _l qname) = qNameCore qname
@@ -354,7 +355,7 @@ scrutinise e alts = case_ e expanded_alts
                                    -- NB: use supply of totally fresh names to avoid introducing shadowing
                                  , let xs = snd $ freshNames expandIdSupply (replicate arity "xpand")
                                  ]
-        
+
         let (def_alts, other_alts) = extractJusts (\alt -> do { (DefaultAlt mb_x, e) <- Just alt; return (mb_x, e) }) alts
         fmap (other_alts ++) $ case def_alts of
             -- We only need to expand defaults if we have a default (which also means that everything is covered)
