@@ -79,7 +79,7 @@ supercompile :: Term -> (SCStats, Term)
 supercompile e = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ sc (mkHistory (extra wQO)) S.empty state
   where input_fvs = annedTermFreeVars anned_e
         state = normalise ((bLOAT_FACTOR - 1) * annedSize anned_e, Heap (M.fromDistinctAscList anned_h_kvs) reduceIdSupply, [], (mkIdentityRenaming $ S.toAscList input_fvs, anned_e))
-        
+
         (tag_ids, anned_h_kvs) = mapAccumL (\tag_ids x' -> let (tag_ids', i) = stepIdSupply tag_ids in (tag_ids', (x', environmentallyBound (mkTag (hashedId i))))) tagIdSupply (S.toList input_fvs)
         anned_e = toAnnedTerm tag_ids e
 
@@ -119,7 +119,7 @@ gc _state@(deeds0, Heap h ids, k, in_e) = assertRender ("gc", stateUncoveredVars
                                           (h_dead, state')
   where
     state' = (deeds2, Heap h' ids, k', in_e)
-    
+
     -- We have to use stateAllFreeVars here rather than stateFreeVars because in order to safely prune the live stack we need
     -- variables bound by k to be part of the live set if they occur within in_e or the rest of the k
     live0 = stateAllFreeVars (deeds0, Heap M.empty ids, k, in_e)
@@ -127,26 +127,26 @@ gc _state@(deeds0, Heap h ids, k, in_e) = assertRender ("gc", stateUncoveredVars
     -- Collecting dead update frames doesn't make any new heap bindings dead since they don't refer to anything
     (deeds2, k') | mATCH_REDUCED = (deeds1, k) -- FIXME: Can't deal with this any longer in the Brave New World of using reduction+GC to prove deadness
                  | otherwise     = pruneLiveStack deeds1 k live1
-    
+
     inlineLiveHeap :: Deeds -> PureHeap -> FreeVars -> (Deeds, PureHeap, PureHeap, FreeVars)
     inlineLiveHeap deeds h live = (deeds `releasePureHeapDeeds` h_dead, h_dead, h_live, live')
       where
         (h_dead, h_live, live') = heap_worker h M.empty live
-        
+
         -- This is just like Split.transitiveInline, but simpler since it never has to worry about running out of deeds:
         heap_worker :: PureHeap -> PureHeap -> FreeVars -> (PureHeap, PureHeap, FreeVars)
         heap_worker h_pending h_output live
           = if live == live'
             then (h_pending', h_output', live')
             else heap_worker h_pending' h_output' live'
-          where 
+          where
             (h_pending_kvs', h_output', live') = M.foldrWithKey consider_inlining ([], h_output, live) h_pending
             h_pending' = M.fromDistinctAscList h_pending_kvs'
-        
+
             consider_inlining x' hb (h_pending_kvs, h_output, live)
               | x' `S.member` live = (h_pending_kvs,            M.insert x' hb h_output, live `S.union` heapBindingFreeVars hb)
               | otherwise          = ((x', hb) : h_pending_kvs, h_output,                live)
-    
+
     pruneLiveStack :: Deeds -> Stack -> FreeVars -> (Deeds, Stack)
     pruneLiveStack deeds k live = (deeds `releaseStackDeeds` k_dead, k_live)
       where (k_live, k_dead) = partition (\kf -> case tagee kf of Update x' -> x' `S.member` live; _ -> True) k
@@ -204,10 +204,10 @@ speculate speculated (stats, (deeds, Heap h ids, k, in_e)) = (M.keysSet h, (stat
     (h_non_values_unspeculated, h_non_values_speculated) = (h_non_values `exclude` speculated, h_non_values `restrict` speculated)
 
     (stats', deeds', h_speculated_ok, h_speculated_failure, ids') = runSpecM (speculateManyMap (mkHistory (extra wQO)) h_non_values_unspeculated) (stats, deeds, h_values, M.empty, ids)
-    
+
     speculateManyMap hist = speculateMany hist . concatMap M.toList . topologicalSort heapBindingFreeVars
     speculateMany hist = mapM_ (speculateOne hist)
-    
+
     speculateOne :: History (State, SpecM ()) (Generaliser, SpecM ()) -> (Out Var, HeapBinding) -> SpecM ()
     speculateOne hist (x', hb)
       | HB InternallyBound (Right in_e) <- hb
@@ -258,7 +258,7 @@ reduce orig_state = go (mkHistory (extra rEDUCE_WQO)) orig_state
         Nothing -> (mempty, state)
         Just state' -> case terminate hist (state, state) of
           Continue hist'         -> go hist' state'
-          Stop (_gen, old_state) -> trace "reduce-stop" $ (mempty { stat_reduce_stops = 1 }, if rEDUCE_ROLLBACK then old_state else state') -- TODO: generalise?
+          Stop (_gen, old_state) -> traceRender "reduce-stop" $ (mempty { stat_reduce_stops = 1 }, if rEDUCE_ROLLBACK then old_state else state') -- TODO: generalise?
 
 
 --
@@ -341,7 +341,7 @@ partitionFulfilments :: (a -> fulfilment -> Maybe b)  -- ^ Decide whether a fulf
                      -> ([fulfilment], [fulfilment])  -- ^ Fulfilments that should be bound and those that should continue to float, respectively
 partitionFulfilments p combine = go
   where go x fs -- | traceRender ("partitionFulfilments", x, map (fun . fst) fs) False = undefined
-                | null fs_now' = ([], fs) 
+                | null fs_now' = ([], fs)
                 | otherwise    = first (fs_now' ++) $ go (combine xs') fs'
                 where (unzip -> (fs_now', xs'), fs') = extractJusts (\fulfilment -> fmap (fulfilment,) $ p x fulfilment) fs
 
@@ -415,9 +415,9 @@ promise p opt = ScpM $ \e s k -> {- traceRender ("promise", fun p, abstracted p)
                                 = (P { fun = fun p, abstracted = abstracted p, meaning = Nothing }, lambdas (abstracted p) (fvedTerm (Var fun') `apps` abstracted'_list)) :
                                   (P { fun = fun', abstracted = abstracted'_list, meaning = Just (unI (meaning p)) }, lambdas abstracted'_list e') : fulfilments s
                         in k () (s { fulfilments = fs' })
-      
+
       fmap (((abstracted_set `S.union` stateLetBounders (unI (meaning p))) `S.union`) . S.fromList) getPromiseNames >>= \fvs -> assertRender ("sc: FVs", fun p, fvs' S.\\ fvs, fvs, e') (fvs' `S.isSubsetOf` fvs) $ return ()
-      
+
       return (a, fun p `varApps` abstracted p)
 
 
@@ -465,7 +465,7 @@ catchScpM f_try f_abort = ScpM $ \e s k -> unScpM (f_try (\c -> ScpM $ \e' s' _k
                           then s
                           else let not_completed = S.fromList (map fun (promises e')) S.\\ S.fromList (map fun (promises e))
                                    (fss_candidates, _fss_common) = splitByReverse (fulfilmentStack e) (fulfilmentStack e')
-                                   
+
                                    -- Since we are rolling back we need to float as many of the fulfilments created in between here and the rollback point
                                    -- upwards. This means that we don't lose the work that we already did to supercompile those bindings.
                                    --
@@ -492,7 +492,7 @@ sc' hist speculated state state' = (\raise -> check raise) `catchScpM` \gen -> s
                       Continue hist' -> continue hist'
                       Stop (gen, rb) -> maybe (stop gen hist) ($ gen) $ guard sC_ROLLBACK >> Just rb
     stop gen hist = do addStats $ mempty { stat_sc_stops = 1 }
-                       trace "sc-stop" $ fromMaybe (trace "sc-stop: no generalisation" $ split state) (generalise gen state) (sc hist speculated) -- Keep the trace exactly here or it gets floated out by GHC
+                       traceRender "sc-stop" $ fromMaybe (trace "sc-stop: no generalisation" $ split state) (generalise gen state) (sc hist speculated) -- Keep the trace exactly here or it gets floated out by GHC
     continue hist = do traceRenderScpM ("reduce end (continue)", pPrintFullState state')
                        addStats stats
                        split state' (sc hist speculated')
@@ -509,7 +509,7 @@ memo opt speculated state0 = do
                                      (state2', state4)
               where h_dead_promoted = M.mapMaybe (\hb -> guard (howBound hb /= InternallyBound) >> return (hb { howBound = InternallyBound })) h_junk
                     state4 = case state0 of (deeds, Heap h ids, k, in_qa) -> (deeds, Heap (h_dead_promoted `M.union` h) ids, k, in_qa)
-    
+
     ps <- getPromises
     case [ (p, (releaseStateDeed state0, fun p `varApps` tb_dynamic_vs))
          | p <- ps
@@ -526,7 +526,7 @@ memo opt speculated state0 = do
         return res
       [] -> {- traceRender ("new drive", pPrintFullState state3) $ -} do
         let vs = stateLambdaBounders state3
-        
+
         -- NB: promises are lexically scoped because they may refer to FVs
         x <- freshHName
         promise P { fun = x, abstracted = S.toList vs, meaning = I state3 } $

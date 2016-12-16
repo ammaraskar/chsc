@@ -31,10 +31,9 @@ type Ways = (Bool, Bool)
 -- The Cambridge Haskell Supercompiler (CHSC)
 main :: IO ()
 main = do
-    hPutStrLn stderr $ "Welcome to the Cool Cambridge Haskell Supercompiler (" ++ cODE_IDENTIFIER ++ ")"
+    hPutStrLn stderr $ "Welcome to the Cool Cambridge Haskell Supercompiler (git log: " ++ cODE_IDENTIFIER ++ ")"
     (flags, args) <- fmap (partition ("-" `isPrefixOf`)) getArgs
-    --putStrLn $ intercalate " " flags
-    putStrLn $ unwords flags
+    putStrLn $ "Flags: " ++ show flags
     case args of
       []            -> putStrLn "TODO: usage"
       ("ghc":files) -> test (True,  False) files
@@ -54,14 +53,14 @@ splitModule xes = (letRecSmart (transitiveInline (S.singleton root)) (var root),
                    fmap (\test -> letRecSmart (filter ((/= root) . fst) $ transitiveInline (S.singleton test)) (var test)) mb_test)
   where
     findBinding what = fmap fst $ find ((== what) . name_string . fst) xes
-    
+
     transitiveInline fvs
         | fvs == fvs' = need_xes
         | otherwise   = transitiveInline fvs'
       where
         need_xes = [(x, e) | (x, e) <- xes, x `S.member` fvs]
         fvs' = fvs `S.union` S.unions (map (termFreeVars . snd) need_xes)
-    
+
     root    = expectJust "No root" $ findBinding "root"
     mb_test = findBinding "tests"
 
@@ -76,51 +75,54 @@ testOne (ghc_way, sc_way) file = do
         -- TODO: excuse me while I barf
         let try_ghc = do
               (before_code, before_res) <- runCompiled wrapper e test_e
-              
+
               -- Save a copy of the non-supercompiled code
               createDirectoryIfMissing True (takeDirectory $ "input" </> file)
               writeFile ("input" </> replaceExtension file ".hs") before_code
-              
+
               return $ fmap (,termSize e,Nothing) before_res
             try_sc = do
               rnf e `seq` return ()
               let (stats, e') = supercompile e
               mb_super_t <- timeout (tIMEOUT_SECONDS * 1000000) (time_ (rnf e' `seq` return ()))
-              
+
               case mb_super_t of
                   Nothing -> return $ Left "Supercompilation timeout"
                   Just super_t -> do
                       (after_code, after_res) <- runCompiled wrapper e' test_e
-              
+
                       -- Save a copy of the supercompiled code somewhere so I can consult it at my leisure
                       let output_dir = "output" </> cODE_IDENTIFIER </> rUN_IDENTIFIER
                       createDirectoryIfMissing True (takeDirectory $ output_dir </> file)
                       writeFile (output_dir </> replaceExtension file ".hs") (unlines ["-- Code: " ++ cODE_IDENTIFIER, "-- Run: " ++ rUN_IDENTIFIER, "", after_code])
-              
+
                       return $ fmap (,termSize e',Just (super_t,stats)) after_res
-        
+
         let benchmark = escape $ map toLower $ takeFileName $ dropExtension file
             dp1 x = showFFloat (Just 1) x ""
             dp2 x = showFFloat (Just 2) x ""
+            dp5 x = showFFloat (Just 5) x ""
             ratio n m = fromIntegral n / fromIntegral m :: Double
             escape = concatMap (\c -> if c == '_' then "\\_" else [c])
-            
+
             showComparison mb_res = intercalate " & " (benchmark:fields) ++ " \\\\"
               where fields = case mb_res of
                                 Just (((_before_size, before_compile_t, before_heap_size, before_run_t), before_term_size, Nothing),
                                       ((_after_size,  after_compile_t,  after_heap_size,  after_run_t),  after_term_size,  Just (after_super_t, after_stats)))
-                                 -> [dp1 after_super_t ++ "s", show (stat_reduce_stops after_stats), show (stat_sc_stops after_stats), dp2 (after_compile_t / before_compile_t), dp2 (after_run_t / before_run_t), dp2 (after_heap_size `ratio` before_heap_size), dp2 (after_term_size `ratio` before_term_size)]
+                                 -> [dp2 after_super_t ++ "s", show (stat_reduce_stops after_stats), show (stat_sc_stops after_stats), dp2 after_compile_t ++ "/"++ dp2 before_compile_t ++ "=" ++ dp2 (after_compile_t / before_compile_t), dp2 after_run_t ++ "/" ++ dp2 before_run_t ++ "=" ++ dp2 (after_run_t / before_run_t), show after_heap_size ++ "/" ++ show before_heap_size ++ "=" ++ dp2 (after_heap_size `ratio` before_heap_size), show after_term_size ++ "/" ++ show before_term_size ++ "=" ++ dp2 (after_term_size `ratio` before_term_size)]
                                 _
                                  -> ["", "", "", "", "", "", ""]
-            
+
             showRaw :: Maybe ((Bytes, Seconds, Bytes, Seconds), Int, Maybe (Seconds, SCStats)) -> String
             showRaw mb_res = intercalate " & " (benchmark:fields) ++ " \\\\"
               where fields = case mb_res of
                                Just ((_size, compile_t, heap_size, run_t), term_size, mb_super_t)
-                                -> maybe ["", "", ""] (\(super_t, stats) -> [show super_t, show (stat_reduce_stops stats), show (stat_sc_stops stats)]) mb_super_t ++ [show compile_t, show run_t, show heap_size, show term_size]
+                                -> maybe ["", "", ""]
+                                  (\(super_t, stats) ->
+                                    [dp5 super_t, show (stat_reduce_stops stats), show (stat_sc_stops stats)]) mb_super_t ++ [dp5 compile_t, dp5 run_t, show heap_size, show term_size]
                                Nothing
                                 -> ["", "", "", "", "", "", ""]
-            
+
         case (ghc_way, sc_way) of
             (True, True) -> do
                 ei_e_ghc_res <- try_ghc
@@ -139,5 +141,3 @@ testOne (ghc_way, sc_way) file = do
                 putStrLn $ showRaw mb_res
                 return mb_err
             (False, False) -> error "testOne: invalid way"
-
-

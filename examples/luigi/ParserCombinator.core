@@ -1,21 +1,6 @@
+#include "../Prelude.core"
 
-import Data.Char (isDigit, isAlpha, isLower, isUpper)
-import Text.Printf (printf)
-
-data Expr
-  = Var  Var
-  | Con  Tag  [Expr]
-  | Lam  Var  Expr
-  | App  Expr Expr
-  | Let  [Binding] Expr
-  | Case Expr [Alt]
-  deriving Eq
-
-type Var = String
-type Tag = String
-type Binding = (Var, Expr)
-type Alt = (Pat, Expr)
-data Pat = Pat Tag [Var] deriving Eq
+-- import Data.Char (isDigit, isAlpha, isLower, isUpper)
 
 con :: Tag -> Expr
 con tag = Con tag []
@@ -33,17 +18,6 @@ cons = con "Cons"
 
 nat :: Int -> Expr
 nat n = if n > 0 then App suc (nat (n - 1)) else zero
-
--- | Represents how many characters are consumed within the parsed string.
-type Chars = Int
-
--- | The result of parsing. It can be an Error or Done.
--- | Done contains the value, line, column and the tail to be parsed.
-data ParserResult a = Error String | Done a Chars String
-
--- | The Parser type. A parser takes a String, process the appropiate
--- | parser, and returns a ParserResult.
-newtype Parser a = Parser { parse :: String -> ParserResult a }
 
 --instance Functor Parser where
 fmap' :: (a -> b) -> Parser a -> Parser b
@@ -126,7 +100,7 @@ satisfy :: String -> (Char -> Bool) -> Parser Char
 satisfy msg pred = (>>=!) item (\c ->
   if pred c
     then return' c
-    else Parser (const (Error (printf "expecting %s got %c" msg c))))
+    else Parser (const (Error (c: "expecting  got " ++ msg ))))
 
 oneOf :: String -> Parser Char
 oneOf s = satisfy s (`elem` s)
@@ -207,7 +181,7 @@ upperword =
 sat :: String -> Parser String -> (String -> Bool) -> Parser String
 sat msg p pred = (>>=!) p (\s -> if pred s
     then return' s
-    else Parser (const (Error (printf "expecting %s got %s" msg s))))
+    else Parser (const (Error ("expecting %s got %s" ++ msg ++ s))))
 
 paired:: String -> String -> Parser a -> Parser a
 paired o c m = reserved o >>! m >>=! (\n-> reserved c >>! return' n )
@@ -314,7 +288,7 @@ listp = (
     ) <|> return' nil
 
 varnamep :: Parser Var
-varnamep = sat (show keywords) varid (not . (`elem` keywords))
+varnamep = sat ("show keywords") varid (not . (`elem` keywords))
   where keywords = ["let", "in", "case", "of"]
 
 varid :: Parser Var
@@ -332,7 +306,7 @@ parseWith p s =
       _ -> error $ "Parser didn't consume entire stream: <<" ++ rest ++ ">> " ++
         " in <<" ++ s ++ ">> at " ++ show chars ++
                    " with (expr ommited by --show--)"
-    Error msg  -> error $ printf "Parser error: %s in ``%s''" msg s
+    Error msg  -> error $ "Parser error: %s in ``%s''" ++ msg ++ s
 
 {-|
   Given a textual representation of Expr, returns the parsed Expr.
@@ -341,5 +315,68 @@ parseExpr :: String -> Expr
 parseExpr = parseWith exprp
 
 root = parseExpr
-tests = []
+
+preludeExpr :: String
+preludeExpr =
+  "let \
+  \  id = {a->a} ;\
+  \  app = {p->{q->p q}} ;\
+  \  inc = {n->Succ n} ;\
+  \  copyN = {n->case n of \
+  \    Zero -> 0;\
+  \    Succ n' -> Succ (copyN n');\
+  \  };\
+  \  append = {xs->{ys->case xs of \
+  \    Nil -> ys;\
+  \    Cons x xs' -> Cons x (append xs' ys);\
+  \  }};\
+  \  reverse' = {xs->case xs of \
+  \    Nil -> Nil;\
+  \    Cons x xs' -> append (reverse' xs') [x];\
+  \  };\
+  \  reverse = {xs-> \
+  \    let reverseAccum = {xs->{as->case xs of \
+  \      Nil -> as;\
+  \      Cons y ys -> reverseAccum ys (Cons y as);\
+  \    }} in reverseAccum xs [] }  ;\
+  \  map = {f->{xs->case xs of \
+  \    Nil->Nil;\
+  \    Cons y ys->Cons (f y)(map f ys);\
+  \  }};\
+  \  plus = {n->{m->case n of \
+  \    Zero->m;\
+  \    Succ nn->plus nn (Succ m);\
+  \  }};\
+  \  mult = {n->{m->case n of \
+  \    Zero->0;\
+  \    Succ nn->plus (mult nn m) m;\
+  \  }};\
+  \  len = {xs->case xs of Nil->0; Cons y ys->Succ (len ys);} ; \
+  \  head = {xs->case xs of Cons y ys -> y; } ; \
+  \  tail = {xs->case xs of Cons y ys -> ys; } ; \
+  \  inf = {n->Cons n (inf (Succ n))} ; \
+  \  infA = Cons A inf in "
+
+prelude10 = preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr
+   ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr
+
+prelude100 = prelude10 ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10
+  ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10
+
+prelude1m = prelude100 ++ prelude100
+     ++ prelude100
+  ++ prelude100
+  ++ prelude100
+  ++ prelude100
+  ++ prelude100
+   ++ prelude100
+  ++ prelude100
+  ++ prelude100
+
+
+tests = [
+    -- (root "f x", App (Var "f") (Var "x")),
+    -- (root "f (g x)", App (Var "f") (App (Var "g") (Var "x")) ),
+    (root (preludeExpr ++ "x"), Var "?")
+  ]
 

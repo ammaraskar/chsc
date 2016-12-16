@@ -1,6 +1,12 @@
 import qualified Prelude
 import Prelude hiding ((+), (-), (*), div, mod)
 
+-- ParserCombinator.core
+import Data.Char (isDigit, isAlpha, isLower, isUpper)
+import Text.Printf (printf)
+
+
+
 prelude_error = Prelude.error
 
 (+) = (Prelude.+) :: Int -> Int -> Int

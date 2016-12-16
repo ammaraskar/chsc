@@ -1,19 +1,20 @@
 {-# LANGUAGE TupleSections, PatternGuards, ExistentialQuantification, DeriveFunctor, DeriveFoldable, DeriveTraversable, GeneralizedNewtypeDeriving,
-             TypeSynonymInstances, FlexibleInstances, IncoherentInstances, OverlappingInstances, TypeOperators, CPP #-}
+             TypeSynonymInstances, FlexibleInstances, IncoherentInstances, TypeOperators, CPP #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Utilities (
     module IdSupply,
     module Utilities,
-    
+
     module Control.Arrow,
     module Control.DeepSeq,
     module Control.Monad,
-    
+
     module Data.Maybe,
     module Data.List,
-    
+
     module Debug.Trace,
-    
+
     module Text.PrettyPrint.HughesPJClass
   ) where
 
@@ -79,7 +80,7 @@ class Functor z => Zippable z where
 
 instance Monad (Either a) where
     return = Right
-    
+
     Left l  >>= _    = Left l
     Right x >>= fxmy = fxmy x
 
@@ -453,7 +454,7 @@ seperate c = go []
 accumL :: (acc -> (acc, a)) -> acc -> Int -> (acc, [a])
 accumL f = go
   where
-    go acc n | n <= 0            = (acc, []) 
+    go acc n | n <= 0            = (acc, [])
              | (acc, x) <- f acc = second (x:) (go acc (n - 1))
 
 
@@ -708,7 +709,7 @@ sumMap f = Foldable.foldr (\x n -> f x + n) 0
 class (Functor t, Foldable.Foldable t) => Accumulatable t where
     mapAccumT  ::            (acc -> x ->   (acc, y)) -> acc -> t x ->   (acc, t y)
     mapAccumTM :: Monad m => (acc -> x -> m (acc, y)) -> acc -> t x -> m (acc, t y)
-    
+
     mapAccumT f acc x = unI (mapAccumTM (\acc' x' -> I (f acc' x')) acc x)
 
 fmapDefault :: (Accumulatable t) => (a -> b) -> t a -> t b

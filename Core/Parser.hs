@@ -19,7 +19,7 @@ import Language.Preprocessor.Cpphs
 import System.Directory
 import System.FilePath (replaceExtension)
 
-import Debug.Trace
+-- import Debug.Trace
 
 parse :: FilePath -> IO (String, [(Var, Term)])
 parse path = do
@@ -203,13 +203,17 @@ declCore d@(LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e) Nothi
 declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) Nothing) =
   declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l [])))
 declCore td@(LHE.TypeDecl _l _declhead _type) =
-    trace (LHE.prettyPrint td) (return [])
+    --trace (LHE.prettyPrint td)
+      (return [])
 declCore dd@(LHE.DataDecl _l _dn _c _dh _ls _der) =
-    trace (LHE.prettyPrint dd) (return [])
+    --trace (LHE.prettyPrint dd)
+      (return [])
 declCore id@(LHE.InstDecl _l _overlap _rule _ids) =
-    trace (LHE.prettyPrint id) (return [])
+    --trace (LHE.prettyPrint id)
+      (return [])
 declCore ts@(LHE.TypeSig _l _names _t) =
-    trace (LHE.prettyPrint ts) (return [])
+    --trace (LHE.prettyPrint ts)
+      (return [])
 declCore d = panic "declCore" (text $ LHE.prettyPrint d ++ show d)
 
 
