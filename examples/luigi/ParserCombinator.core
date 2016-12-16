@@ -377,6 +377,6 @@ prelude1m = prelude100 ++ prelude100
 tests = [
     -- (root "f x", App (Var "f") (Var "x")),
     -- (root "f (g x)", App (Var "f") (App (Var "g") (Var "x")) ),
-    (root (preludeExpr ++ "x"), Var "?")
+    (root (prelude1m ++ "x"), Var "?")
   ]
 
