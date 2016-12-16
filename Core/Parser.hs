@@ -19,6 +19,8 @@ import Language.Preprocessor.Cpphs
 import System.Directory
 import System.FilePath (replaceExtension)
 
+import Debug.Trace
+
 parse :: FilePath -> IO (String, [(Var, Term)])
 parse path = do
     -- Read and pre-process .core file
@@ -200,8 +202,15 @@ declCore d@(LHE.FunBind _l [LHE.Match _loc n pats (LHE.UnGuardedRhs _l' e) Nothi
     (Just (LHE.BDecls _l [])) ])
 declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) Nothing) =
   declCore (LHE.PatBind _loc pat (LHE.UnGuardedRhs _l e) (Just (LHE.BDecls _l [])))
-declCore (LHE.TypeDecl _l _declhead _type) = return []
-declCore d = panic "declCore" (text $ show d)
+declCore td@(LHE.TypeDecl _l _declhead _type) =
+    trace (LHE.prettyPrint td) (return [])
+declCore dd@(LHE.DataDecl _l _dn _c _dh _ls _der) =
+    trace (LHE.prettyPrint dd) (return [])
+declCore id@(LHE.InstDecl _l _overlap _rule _ids) =
+    trace (LHE.prettyPrint id) (return [])
+declCore ts@(LHE.TypeSig _l _names _t) =
+    trace (LHE.prettyPrint ts) (return [])
+declCore d = panic "declCore" (text $ LHE.prettyPrint d ++ show d)
 
 
 expCore :: LHE.Exp LHE.SrcSpanInfo -> ParseM Term

@@ -34,7 +34,17 @@ dataTypes = [
     [("H"      , 0),  -- Paraffins
      ("C"      , 3),  -- Paraffins
      ("BCP"    , 2),  -- Paraffins
-     ("CCP"    , 4)]  -- Paraffins
+     ("CCP"    , 4)],  -- Paraffins
+    [("App"    , 2),   -- Expr
+     ("Case"   , 2),
+     ("Lam"    , 2),
+     ("Let"    , 2),
+     ("Var"    , 1),
+     ("Con"    , 2)],
+    [("Pat"    , 2)],
+    [("Done"   , 3),
+     ("Error"  , 1)],   -- ParserResult
+    [("Parser" , 1)]   -- Parser
   ]
 
 dataConFriendlyName :: DataCon -> Maybe String
