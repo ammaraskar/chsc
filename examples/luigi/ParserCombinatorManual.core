@@ -1,7 +1,5 @@
 #include "../Prelude.core"
 
--- import Data.Char (isDigit, isAlpha, isLower, isUpper)
-
 con :: Tag -> Expr
 con tag = Con tag []
 
@@ -357,17 +355,26 @@ preludeExpr =
   \  inf = {n->Cons n (inf (Succ n))} ; \
   \  infA = Cons A inf in "
 
-prelude1k   = preludeExpr -- 922 bytes
-prelude10k  = concat $ replicate 10 prelude1k
-prelude100k = concat $ replicate 10 prelude10k
-prelude1m   = concat $ replicate 10 prelude100k
-prelude10m  = concat $ replicate 10 prelude1m
-prelude100m = concat $ replicate 10 prelude10m
-prelude1g   = concat $ replicate 10 prelude100m
+prelude10 = preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr
+   ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr
+
+prelude100 = prelude10 ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10
+  ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10
+
+prelude1m = prelude100 ++ prelude100
+     ++ prelude100
+  ++ prelude100
+  ++ prelude100
+  ++ prelude100
+  ++ prelude100
+   ++ prelude100
+  ++ prelude100
+  ++ prelude100
+
 
 tests = [
     -- (root "f x", App (Var "f") (Var "x")),
     -- (root "f (g x)", App (Var "f") (App (Var "g") (Var "x")) ),
-    (root (prelude10k ++ "x"), Var "?")
+    (root (prelude1m ++ "x"), Var "?")
   ]
 

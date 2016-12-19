@@ -74,7 +74,7 @@ testOne (ghc_way, sc_way) file = do
       (e, Just test_e) -> do
         -- TODO: excuse me while I barf
         let try_ghc = do
-              (before_code, before_res) <- runCompiled wrapper e test_e
+              (before_code, before_res) <- runCompiled "PCGHC.hs" wrapper e test_e
 
               -- Save a copy of the non-supercompiled code
               createDirectoryIfMissing True (takeDirectory $ "input" </> file)
@@ -89,7 +89,7 @@ testOne (ghc_way, sc_way) file = do
               case mb_super_t of
                   Nothing -> return $ Left "Supercompilation timeout"
                   Just super_t -> do
-                      (after_code, after_res) <- runCompiled wrapper e' test_e
+                      (after_code, after_res) <- runCompiled "PCSCP.hs" wrapper e' test_e
 
                       -- Save a copy of the supercompiled code somewhere so I can consult it at my leisure
                       let output_dir = "output" </> cODE_IDENTIFIER </> rUN_IDENTIFIER

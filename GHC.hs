@@ -12,6 +12,7 @@ import System.Directory
 import System.Exit
 import System.IO
 import System.Process
+import System.FilePath
 
 
 gHC :: FilePath
@@ -124,20 +125,31 @@ ghcVersion = do
     (ExitSuccess, compile_out, "") <- readProcessWithExitCode gHC ["--version"] ""
     return $ map read . seperate '.' . last . words $ compile_out
 
-runCompiled :: String -> Term -> Term -> IO (String, Either String (Bytes, Seconds, Bytes, Seconds))
-runCompiled wrapper e test_e = withTempFile "Main" $ \(exe_file, exe_h) -> do
+runCompiled :: String -> String -> Term -> Term -> IO (String, Either String (Bytes, Seconds, Bytes, Seconds))
+runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateName) $ \(exe_file, exe_h) -> do
     hClose exe_h
     let haskell = testingModule wrapper e test_e
-    (compile_t, (ec, compile_out, compile_err)) <- withTempFile "Main.hs" $ \(hs_file, hs_h) -> do
+    (compile_t, (ec, compile_out, compile_err)) <- withTempFile templateName $ \(hs_file, hs_h) -> do
         hPutStr hs_h haskell
         hClose hs_h
         ghc_ver <- ghcVersion
-        time $ readProcessWithExitCode gHC (["--make", hs_file, "-fforce-recomp", "-o", exe_file] ++ [if nO_OPTIMISATIONS then "-O0" else "-O2"] ++ gHC_OPTIONS ++ ["-ddump-simpl" | not qUIET] ++ ["-ticky" | tICKY] ++ ["-rtsopts" | ghc_ver >= [7]]) ""
+        time $ readProcessWithExitCode gHC (["--make", hs_file, "-fforce-recomp", "-o", exe_file] ++ ["-prof"] ++
+          [if nO_OPTIMISATIONS then "-O0" else "-O2"] ++ gHC_OPTIONS ++ ["-ddump-simpl" | not qUIET] ++ ["-ticky" | tICKY] ++ ["-rtsopts" | ghc_ver >= [7]]) ""
     compiled_size <- fileSize exe_file
     case ec of
-      ExitFailure _ -> hPutStrLn stderr haskell >> return (haskell, Left compile_err)
+      ExitFailure _ -> 
+        do
+          print "Error haskell: "
+          putStrLn compile_err
+          putStrLn compile_out
+          --hPutStrLn stderr haskell >> return (haskell, Left compile_err)
+          --hPutStrLn stderr haskell 
+          return (haskell, Left compile_err)
       ExitSuccess   -> do
-          (ec, run_out, run_err) <- readProcessWithExitCode exe_file (["+RTS", "-t"] ++ ["-rstderr" | tICKY]) ""
+          putStrLn $ "Running: " ++ exe_file
+          (ec, run_out, run_err) <- readProcessWithExitCode exe_file (
+            ["+RTS", "-t", "-h"] ++ ["-pa"] ++
+            ["-rstderr" | tICKY]) ""
           case ec of
             ExitFailure _ -> hPutStrLn stderr haskell >> return (haskell, Left (unlines [compile_out, run_err]))
             ExitSuccess -> do
