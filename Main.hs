@@ -18,7 +18,7 @@ import qualified Data.Set as S
 
 import System.Directory
 import System.Environment
-import System.FilePath ((</>), dropExtension, takeFileName, takeDirectory, replaceExtension)
+import System.FilePath ((</>), dropExtension, takeFileName, takeDirectory, replaceExtension, takeBaseName)
 import System.IO
 import System.Timeout
 
@@ -74,7 +74,8 @@ testOne (ghc_way, sc_way) file = do
       (e, Just test_e) -> do
         -- TODO: excuse me while I barf
         let try_ghc = do
-              (before_code, before_res) <- runCompiled "PCGHC.hs" wrapper e test_e
+              let template = takeBaseName file ++ "-GHC.hs"
+              (before_code, before_res) <- runCompiled template wrapper e test_e
 
               -- Save a copy of the non-supercompiled code
               createDirectoryIfMissing True (takeDirectory $ "input" </> file)
@@ -89,7 +90,8 @@ testOne (ghc_way, sc_way) file = do
               case mb_super_t of
                   Nothing -> return $ Left "Supercompilation timeout"
                   Just super_t -> do
-                      (after_code, after_res) <- runCompiled "PCSCP.hs" wrapper e' test_e
+                      let template = takeBaseName file ++ "-SCP.hs"
+                      (after_code, after_res) <- runCompiled template wrapper e' test_e
 
                       -- Save a copy of the supercompiled code somewhere so I can consult it at my leisure
                       let output_dir = "output" </> cODE_IDENTIFIER </> rUN_IDENTIFIER

@@ -133,7 +133,7 @@ runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateN
         hPutStr hs_h haskell
         hClose hs_h
         ghc_ver <- ghcVersion
-        time $ readProcessWithExitCode gHC (["--make", hs_file, "-fforce-recomp", "-o", exe_file] ++ ["-prof"] ++
+        time $ readProcessWithExitCode gHC (["--make", hs_file, "-fforce-recomp", "-o", exe_file] ++ -- ["-prof"] ++
           [if nO_OPTIMISATIONS then "-O0" else "-O2"] ++ gHC_OPTIONS ++ ["-ddump-simpl" | not qUIET] ++ ["-ticky" | tICKY] ++ ["-rtsopts" | ghc_ver >= [7]]) ""
     compiled_size <- fileSize exe_file
     case ec of
@@ -148,15 +148,20 @@ runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateN
       ExitSuccess   -> do
           putStrLn $ "Running: " ++ exe_file
           (ec, run_out, run_err) <- readProcessWithExitCode exe_file (
-            ["+RTS", "-t", "-h"] ++ ["-pa"] ++
+            ["+RTS"] ++
+            ["-S" ++ dropExtension templateName ++ ".stats"] ++
+            ["-t"] ++
             ["-rstderr" | tICKY]) ""
           case ec of
             ExitFailure _ -> hPutStrLn stderr haskell >> return (haskell, Left (unlines [compile_out, run_err]))
             ExitSuccess -> do
+              --putStrLn run_out
+              putStrLn $ templateName ++ run_err
               -- <<ghc: 7989172 bytes, 16 GCs, 20876/20876 avg/max bytes residency (1 samples), 1M in use, 0.00 INIT (0.00 elapsed), 0.02 MUT (0.51 elapsed), 0.00 GC (0.00 elapsed) :ghc>>
               let [t_str] = lines run_out
                   [gc_stats] = (filter ("<<ghc" `isPrefixOf`) . lines) run_err
                   total_bytes_allocated = read (words gc_stats !! 1)
+              --print $ words gc_stats
               return (haskell ++ unlines ["", "{-", run_err, "-}"], Right (compiled_size, compile_t, total_bytes_allocated, read t_str))
 
 withTempFile :: String -> ((FilePath, Handle) -> IO b) -> IO b
