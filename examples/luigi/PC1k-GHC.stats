@@ -1,0 +1,28 @@
+/var/folders/89/2ksgj1s104qg4kzrf9np5h2m0000gn/T/PC1k-GHC16807282475249 +RTS -Sexamples/luigi/PC1k-GHC.stats 
+    Alloc    Copied     Live     GC     GC      TOT      TOT  Page Flts
+    bytes     bytes     bytes   user   elap     user     elap
+   484024      3408     44312  0.000  0.007    0.001    0.027  119  316  (Gen:  1)
+        0                      0.000  0.000
+
+         484,024 bytes allocated in the heap
+           3,408 bytes copied during GC
+          44,312 bytes maximum residency (1 sample(s))
+          17,128 bytes maximum slop
+               2 MB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0         0 colls,     0 par    0.000s   0.000s     0.0000s    0.0000s
+  Gen  1         1 colls,     0 par    0.000s   0.007s     0.0066s    0.0066s
+
+  INIT    time    0.000s  (  0.002s elapsed)
+  MUT     time    0.001s  (  0.017s elapsed)
+  GC      time    0.000s  (  0.007s elapsed)
+  EXIT    time    0.000s  (  0.001s elapsed)
+  Total   time    0.001s  (  0.027s elapsed)
+
+  %GC     time      24.0%  (24.7% elapsed)
+
+  Alloc rate    683,649,717 bytes per MUT second
+
+  Productivity  65.6% of total user, 67.3% of total elapsed
+

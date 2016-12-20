@@ -1,0 +1,30 @@
+/var/folders/89/2ksgj1s104qg4kzrf9np5h2m0000gn/T/PC10k-SCP1144108930470211272 +RTS -Sexamples/luigi/PC10k-SCP.stats 
+    Alloc    Copied     Live     GC     GC      TOT      TOT  Page Flts
+    bytes     bytes     bytes   user   elap     user     elap
+  1065112    328472    361216  0.001  0.002    0.002    0.013   15  239  (Gen:  0)
+  1039040    494976    527720  0.001  0.021    0.003    0.034  199    0  (Gen:  1)
+   869784      3408     44312  0.000  0.000    0.004    0.035    1   27  (Gen:  1)
+        0                      0.000  0.000
+
+       2,973,936 bytes allocated in the heap
+         826,856 bytes copied during GC
+         527,720 bytes maximum residency (2 sample(s))
+          25,320 bytes maximum slop
+               2 MB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0         1 colls,     0 par    0.001s   0.002s     0.0022s    0.0022s
+  Gen  1         2 colls,     0 par    0.001s   0.021s     0.0103s    0.0206s
+
+  INIT    time    0.000s  (  0.003s elapsed)
+  MUT     time    0.002s  (  0.009s elapsed)
+  GC      time    0.002s  (  0.023s elapsed)
+  EXIT    time    0.000s  (  0.000s elapsed)
+  Total   time    0.004s  (  0.035s elapsed)
+
+  %GC     time      49.9%  (65.5% elapsed)
+
+  Alloc rate    1,642,151,297 bytes per MUT second
+
+  Productivity  45.8% of total user, 27.3% of total elapsed
+
