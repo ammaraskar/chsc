@@ -1,10 +1,10 @@
 /var/folders/89/2ksgj1s104qg4kzrf9np5h2m0000gn/T/PC1k-SCP1144108930470211272 +RTS -Sexamples/luigi/PC1k-SCP.stats 
     Alloc    Copied     Live     GC     GC      TOT      TOT  Page Flts
     bytes     bytes     bytes   user   elap     user     elap
-   375280      3408     44312  0.000  0.006    0.001    0.029  119  323  (Gen:  1)
+   374424      3408     44312  0.000  0.008    0.001    0.031  119  323  (Gen:  1)
         0                      0.000  0.000
 
-         375,280 bytes allocated in the heap
+         374,424 bytes allocated in the heap
            3,408 bytes copied during GC
           44,312 bytes maximum residency (1 sample(s))
           17,128 bytes maximum slop
@@ -12,17 +12,17 @@
 
                                      Tot time (elapsed)  Avg pause  Max pause
   Gen  0         0 colls,     0 par    0.000s   0.000s     0.0000s    0.0000s
-  Gen  1         1 colls,     0 par    0.000s   0.006s     0.0063s    0.0063s
+  Gen  1         1 colls,     0 par    0.000s   0.008s     0.0082s    0.0082s
 
   INIT    time    0.000s  (  0.004s elapsed)
-  MUT     time    0.001s  (  0.018s elapsed)
-  GC      time    0.000s  (  0.006s elapsed)
+  MUT     time    0.001s  (  0.019s elapsed)
+  GC      time    0.000s  (  0.008s elapsed)
   EXIT    time    0.000s  (  0.001s elapsed)
-  Total   time    0.001s  (  0.029s elapsed)
+  Total   time    0.001s  (  0.031s elapsed)
 
-  %GC     time      16.5%  (21.8% elapsed)
+  %GC     time      20.6%  (26.1% elapsed)
 
-  Alloc rate    535,349,500 bytes per MUT second
+  Alloc rate    595,268,680 bytes per MUT second
 
-  Productivity  69.4% of total user, 65.3% of total elapsed
+  Productivity  64.8% of total user, 62.4% of total elapsed
 
