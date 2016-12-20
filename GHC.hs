@@ -129,7 +129,7 @@ runCompiled :: String -> String -> Term -> Term -> IO (String, Either String (By
 runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateName) $ \(exe_file, exe_h) -> do
     hClose exe_h
     let haskell = testingModule wrapper e test_e
-    (compile_t, (ec, compile_out, compile_err)) <- withTempFile templateName $ \(hs_file, hs_h) -> do
+    (compile_t, (ec, compile_out, compile_err)) <- withTempFile (takeBaseName templateName ++ ".hs") $ \(hs_file, hs_h) -> do
         hPutStr hs_h haskell
         hClose hs_h
         ghc_ver <- ghcVersion
@@ -150,7 +150,7 @@ runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateN
           (ec, run_out, run_err) <- readProcessWithExitCode exe_file (
             ["+RTS"] ++
             ["-S" ++ dropExtension templateName ++ ".stats"] ++
-            ["-t"] ++
+            --["-t"] ++
             ["-rstderr" | tICKY]) ""
           case ec of
             ExitFailure _ -> hPutStrLn stderr haskell >> return (haskell, Left (unlines [compile_out, run_err]))

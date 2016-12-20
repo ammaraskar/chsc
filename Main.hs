@@ -74,7 +74,7 @@ testOne (ghc_way, sc_way) file = do
       (e, Just test_e) -> do
         -- TODO: excuse me while I barf
         let try_ghc = do
-              let template = takeBaseName file ++ "-GHC.hs"
+              let template = dropExtension file ++ "-GHC.hs"
               (before_code, before_res) <- runCompiled template wrapper e test_e
 
               -- Save a copy of the non-supercompiled code
@@ -90,7 +90,7 @@ testOne (ghc_way, sc_way) file = do
               case mb_super_t of
                   Nothing -> return $ Left "Supercompilation timeout"
                   Just super_t -> do
-                      let template = takeBaseName file ++ "-SCP.hs"
+                      let template = dropExtension file ++ "-SCP.hs"
                       (after_code, after_res) <- runCompiled template wrapper e' test_e
 
                       -- Save a copy of the supercompiled code somewhere so I can consult it at my leisure
