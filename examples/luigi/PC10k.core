@@ -1,5 +1,7 @@
 #include "../Prelude.core"
 
+-- import Data.Char (isDigit, isAlpha, isLower, isUpper)
+
 con :: Tag -> Expr
 con tag = Con tag []
 
@@ -355,26 +357,12 @@ preludeExpr =
   \  inf = {n->Cons n (inf (Succ n))} ; \
   \  infA = Cons A inf in "
 
-prelude10 = preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr
-   ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr ++ preludeExpr
-
-prelude100 = prelude10 ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10
-  ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10 ++ prelude10
-
-prelude1m = prelude100 ++ prelude100
-     ++ prelude100
-  ++ prelude100
-  ++ prelude100
-  ++ prelude100
-  ++ prelude100
-   ++ prelude100
-  ++ prelude100
-  ++ prelude100
-
+prelude1k   = preludeExpr -- 922 bytes
+prelude10k  = concat $ replicate 10 prelude1k
 
 tests = [
     -- (root "f x", App (Var "f") (Var "x")),
     -- (root "f (g x)", App (Var "f") (App (Var "g") (Var "x")) ),
-    (root (prelude1m ++ "x"), Var "?")
+    (root (prelude10k ++ "x"), Var "?")
   ]
 
