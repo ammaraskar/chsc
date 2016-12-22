@@ -1,10 +1,10 @@
-/var/folders/89/2ksgj1s104qg4kzrf9np5h2m0000gn/T/PC1k-GHC16807282475249 +RTS -Sexamples/luigi/PC1k-GHC.stats 
+/var/folders/89/2ksgj1s104qg4kzrf9np5h2m0000gn/T/PCManual-GHC16807282475249 +RTS -Sexamples/luigi/PCManual-GHC.stats 
     Alloc    Copied     Live     GC     GC      TOT      TOT  Page Flts
     bytes     bytes     bytes   user   elap     user     elap
-   482984      3408     44312  0.000  0.007    0.001    0.028  119  316  (Gen:  1)
+   465008      3408     44312  0.000  0.008    0.001    0.027  120  320  (Gen:  1)
         0                      0.000  0.000
 
-         482,984 bytes allocated in the heap
+         465,008 bytes allocated in the heap
            3,408 bytes copied during GC
           44,312 bytes maximum residency (1 sample(s))
           17,128 bytes maximum slop
@@ -12,17 +12,17 @@
 
                                      Tot time (elapsed)  Avg pause  Max pause
   Gen  0         0 colls,     0 par    0.000s   0.000s     0.0000s    0.0000s
-  Gen  1         1 colls,     0 par    0.000s   0.007s     0.0070s    0.0070s
+  Gen  1         1 colls,     0 par    0.000s   0.008s     0.0083s    0.0083s
 
   INIT    time    0.000s  (  0.002s elapsed)
-  MUT     time    0.001s  (  0.018s elapsed)
-  GC      time    0.000s  (  0.007s elapsed)
+  MUT     time    0.001s  (  0.016s elapsed)
+  GC      time    0.000s  (  0.008s elapsed)
   EXIT    time    0.000s  (  0.001s elapsed)
-  Total   time    0.001s  (  0.028s elapsed)
+  Total   time    0.001s  (  0.027s elapsed)
 
-  %GC     time      23.5%  (25.1% elapsed)
+  %GC     time      21.5%  (30.9% elapsed)
 
-  Alloc rate    737,380,152 bytes per MUT second
+  Alloc rate    767,339,933 bytes per MUT second
 
-  Productivity  66.0% of total user, 68.5% of total elapsed
+  Productivity  65.0% of total user, 61.4% of total elapsed
 

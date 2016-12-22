@@ -77,7 +77,7 @@ testingModule wrapper e test_e = unlines $
     "  where results = map assertEq tests" :
     "" :
     "assertEq :: (Show a, Eq a) => (a, a) -> ()" :
-    "assertEq (x, y) = if x == y || True then () else error (\"FAIL! \" ++ show x ++ \", \" ++ show y)" :
+    "assertEq (x, y) = if x == y || False then () else error (\"FAIL! \" ++ show x ++ \", \" ++ show y)" :
     "" :
     termToHaskellBinding "root" e ++
     termToHaskellBinding "tests" test_e
@@ -149,8 +149,8 @@ runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateN
           putStrLn $ "Running: " ++ exe_file
           (ec, run_out, run_err) <- readProcessWithExitCode exe_file (
             ["+RTS"] ++
-            ["-S" ++ dropExtension templateName ++ ".stats"] ++
-            --["-t"] ++
+            --["-S" ++ dropExtension templateName ++ ".stats"] ++
+            ["-t"] ++
             ["-rstderr" | tICKY]) ""
           case ec of
             ExitFailure _ -> hPutStrLn stderr haskell >> return (haskell, Left (unlines [compile_out, run_err]))
