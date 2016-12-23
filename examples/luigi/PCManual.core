@@ -102,6 +102,24 @@ reserved s = token (string s)
 spaces :: Parser String
 spaces = many $ oneOf " \n\r"
 
+oneOfSpace :: Parser Char
+oneOfSpaces s = case s of
+    []     -> Error "Reached EOF"
+    (c:cs) -> case c==" "||c=="\n"||c=="\r"||False of
+        False ->  Error " \n\r"
+        True -> Done c 1 cs
+
+-- ?or :: B -> B -> B
+-- ?or p q = case p of T -> T; F -> q
+-- ?or p False = case p of T -> T; F->F ~~ p ? eval issues?
+
+spaces' s = case s of
+  [] -> Done [] 0 s
+  c:cs -> case c==' '||c=='\n'||c=='\r' of
+    False -> Done [] 0 s
+    True -> case spaces' cs of
+      Done l' chars' rest' -> Done (c:l') (1+chars') rest'
+
 digit :: Parser Char
 digit = satisfy "isdigit" isDigit
 
@@ -264,59 +282,14 @@ varid =
   spaces >>!
   return' (c:cs)
 
-parseWith :: Parser Expr -> String -> Expr
-parseWith p s =
-  case (spaces >>! p) s of
+root :: String -> Expr
+root s = case (spaces >>! exprp) s of
     Done a chars rest -> case rest of
       [] -> a
       _ -> error $ "Parser didn't consume entire stream: <<" ++ rest ++ ">> " ++
         " in <<" ++ s ++ ">> at " ++ show chars ++
                    " with (expr ommited by --show--)"
     Error msg  -> error $ "Parser error: %s in ``%s''" ++ msg ++ s
-
-root :: String -> Expr
-root = parseWith exprp
-
-preludeExpr :: String
-preludeExpr =
-  "let \
-  \  id = {a->a} ;\
-  \  app = {p->{q->p q}} ;\
-  \  inc = {n->Succ n} ;\
-  \  copyN = {n->case n of \
-  \    Zero -> 0;\
-  \    Succ n' -> Succ (copyN n');\
-  \  };\
-  \  append = {xs->{ys->case xs of \
-  \    Nil -> ys;\
-  \    Cons x xs' -> Cons x (append xs' ys);\
-  \  }};\
-  \  reverse' = {xs->case xs of \
-  \    Nil -> Nil;\
-  \    Cons x xs' -> append (reverse' xs') [x];\
-  \  };\
-  \  reverse = {xs-> \
-  \    let reverseAccum = {xs->{as->case xs of \
-  \      Nil -> as;\
-  \      Cons y ys -> reverseAccum ys (Cons y as);\
-  \    }} in reverseAccum xs [] }  ;\
-  \  map = {f->{xs->case xs of \
-  \    Nil->Nil;\
-  \    Cons y ys->Cons (f y)(map f ys);\
-  \  }};\
-  \  plus = {n->{m->case n of \
-  \    Zero->m;\
-  \    Succ nn->plus nn (Succ m);\
-  \  }};\
-  \  mult = {n->{m->case n of \
-  \    Zero->0;\
-  \    Succ nn->plus (mult nn m) m;\
-  \  }};\
-  \  len = {xs->case xs of Nil->0; Cons y ys->Succ (len ys);} ; \
-  \  head = {xs->case xs of Cons y ys -> y; } ; \
-  \  tail = {xs->case xs of Cons y ys -> ys; } ; \
-  \  inf = {n->Cons n (inf (Succ n))} ; \
-  \  infA = Cons A inf in "
 
 prelude1k = preludeExpr -- 922 bytes
 
