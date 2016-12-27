@@ -207,6 +207,8 @@ termp = litintp
     <|> parens exprp
     <|> brackets listp
 
+termp' :: String -> ParserResult Expr
+termp' s = 
 litintp :: Parser Expr
 litintp = number >>=! \n-> return' (nat n)
 
@@ -282,8 +284,14 @@ varid =
   spaces >>!
   return' (c:cs)
 
+bind'spaces'exprp :: String -> ParserResult Expr
+bind'spaces'exprp s = case spaces' s of
+      Done _a'p chars'p rest'p -> case exprp rest'p of
+        Error msg'q -> Error msg'q
+        Done b'q chars'q rest'q -> Done b'q (chars'p+chars'q) rest'q
+
 root :: String -> Expr
-root s = case (spaces >>! exprp) s of
+root s = case bind'spaces'exprp s of
     Done a chars rest -> case rest of
       [] -> a
       _ -> error $ "Parser didn't consume entire stream: <<" ++ rest ++ ">> " ++
