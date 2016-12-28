@@ -1,7 +1,5 @@
 #include "../Prelude.core"
 
--- import Data.Char (isDigit, isAlpha, isLower, isUpper)
-
 con :: Tag -> Expr
 con tag = Con tag []
 
@@ -19,7 +17,6 @@ cons = con "Cons"
 nat :: Int -> Expr
 nat n = if n > 0 then App suc (nat (n - 1)) else zero
 
---instance Functor Parser where
 fmap' :: (a -> b) -> Parser a -> Parser b
 fmap' f parser =
   case parser of
@@ -29,10 +26,8 @@ fmap' f parser =
         Done a chars rest -> Done (f a) chars rest
       )
 
---instance Applicative Parser where
 pure' :: a -> Parser a
 pure' a = Parser (Done a 0)
-
 
 (<*>!) :: Parser (a -> b) -> Parser a -> Parser b
 (<*>!) op v = case op of
@@ -45,7 +40,6 @@ pure' a = Parser (Done a 0)
           Done a chars' rest' -> Done (f a) (chars+chars') rest'
       )
 
---instance Monad Parser where
 return' :: a -> Parser a
 return' = pure'
 
@@ -62,7 +56,6 @@ return' = pure'
 (>>!) :: Parser a -> Parser b -> Parser b
 (>>!) p q = p >>=! (\_x -> q)
 
---instance Alternative Parser where
 empty :: Parser a
 empty = Parser (const (Error "Empty parser"))
 
@@ -89,8 +82,6 @@ many v = many_v
     many_v = some_v <|> pure' []
     some_v = (fmap' (:) v) <*>! many_v
 
-
--- | Parses a char.
 item :: Parser Char
 item = Parser (\s -> case s of
     []     -> Error "Reached EOF"
@@ -102,11 +93,8 @@ satisfy msg pred = (>>=!) item (\c ->
     then return' c
     else Parser (const (Error (c: "expecting  got " ++ msg ))))
 
---elemp :: Eq a => a -> [a] -> Bool
-elemp y xs = case xs of [] -> False; (x:xs) -> x == y || (elemp y xs)
-
 oneOf :: String -> Parser Char
-oneOf s = satisfy s (\c -> elemp c s)
+oneOf s = satisfy s (`elem` s)
 
 char :: Char -> Parser Char
 char c = satisfy [c] (c ==)
@@ -180,11 +168,6 @@ upperword =
   spaces >>!
   return' (c:cs)
   ))
-
-sat :: String -> Parser String -> (String -> Bool) -> Parser String
-sat msg p pred = (>>=!) p (\s -> if pred s
-    then return' s
-    else Parser (const (Error ("expecting %s got %s" ++ msg ++ s))))
 
 paired:: String -> String -> Parser a -> Parser a
 paired o c m = reserved o >>! m >>=! (\n-> reserved c >>! return' n )
@@ -290,20 +273,22 @@ listp = (
         return' (app cons [item, nil])
     ) <|> return' nil
 
-elempk y xs = case xs of [] -> False; (x:xsp) -> x == y -- || (elempk y xs')
-
-keywords :: [String]
-keywords = ["let", "in", "case", "of"]
+sat :: Parser String -> (String -> Bool) -> Parser String
+sat p pred = (>>=!) p (\s -> if pred s
+    then return' s
+    else Parser (const (Error "expecting %s got %s")))
 
 varnamep :: Parser Var
-varnamep = sat ("show keywords") varid (not . (\s-> elempk s keywords))
+varnamep = sat varid (not . (`elem` keywords))
+  where keywords = ["let", "in", "case", "of"]
 
 varid :: Parser Var
 varid =
-  loweralpha <|> dollar <|> underscore >>=! \c->
-  many (alpha <|> digit <|> underscore <|> quote) >>=! \cs->
+  (loweralpha <|> dollar <|> underscore) >>=! (\c->
+  (many (alpha <|> digit <|> underscore <|> quote) ) >>=! (\cs->
   spaces >>!
   return' (c:cs)
+  ))
 
 parseWith :: Parser Expr -> String -> Expr
 parseWith p s =
@@ -315,9 +300,6 @@ parseWith p s =
                    " with (expr ommited by --show--)"
     Error msg  -> error $ "Parser error: %s in ``%s''" ++ msg ++ s
 
-{-|
-  Given a textual representation of Expr, returns the parsed Expr.
--}
 parseExpr :: String -> Expr
 parseExpr = parseWith exprp
 
@@ -363,15 +345,3 @@ preludeExpr =
   \  tail = {xs->case xs of Cons y ys -> ys; } ; \
   \  inf = {n->Cons n (inf (Succ n))} ; \
   \  infA = Cons A inf in "
-
-prelude1k   = preludeExpr -- 922 bytes
-prelude10k  = concat $ replicate 10 prelude1k
-prelude100k = concat $ replicate 10 prelude10k
-prelude1m   = concat $ replicate 10 prelude100k
-
-tests = [
-    -- (root "f x", App (Var "f") (Var "x")),
-    -- (root "f (g x)", App (Var "f") (App (Var "g") (Var "x")) ),
-    (root (prelude1m ++ "x"), Var "?")
-  ]
-
