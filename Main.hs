@@ -33,7 +33,7 @@ main :: IO ()
 main = do
     hPutStrLn stderr $ "Welcome to the Cool Cambridge Haskell Supercompiler (git log: " ++ cODE_IDENTIFIER ++ ")"
     (flags, args) <- fmap (partition ("-" `isPrefixOf`)) getArgs
-    putStrLn $ "Flags: " ++ show flags
+    putStrLn $ "Flags: " ++ show flags ++ " Args: " ++ show args
     case args of
       []            -> putStrLn "TODO: usage"
       ("ghc":files) -> test (True,  False) files
