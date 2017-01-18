@@ -77,7 +77,7 @@ testingModule wrapper e test_e = unlines $
     "  where results = map assertEq tests" :
     "" :
     "assertEq :: (Show a, Eq a) => (a, a) -> ()" :
-    "assertEq (x, y) = if x == y || True then () else error (\"FAIL! \" ++ show x ++ \", \" ++ show y)" :
+    "assertEq (x, y) = if x == y || False then () else error (\"FAIL! \" ++ show x ++ \", \" ++ show y)" :
     "" :
     termToHaskellBinding "root" e ++
     termToHaskellBinding "tests" test_e
