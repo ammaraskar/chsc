@@ -1,0 +1,8 @@
+#include "../Prelude.core"
+
+root :: Char -> Bool
+root c = c == '$' ||
+  -- elem [c] ["$"]  -- OK
+  [c]=="$"  -- Error: Couldn't match expected type ‘[Char]’ with actual type ‘Char’
+
+tests = [(root '$', True)]
