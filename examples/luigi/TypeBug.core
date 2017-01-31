@@ -1,8 +1,25 @@
 #include "../Prelude.core"
 
-root :: Char -> Bool
-root c = (Prelude.==) c '$' ||
-  -- elem [c] ["$"]  -- OK
-  [c]=="$"  -- Error: Couldn't match expected type ‘[Char]’ with actual type ‘Char’
+-- root :: Char -> Bool
+-- root c = (Prelude.==) c '$' ||
+--   -- elem [c] ["$"]  -- OK
+--   [c]=="$"  -- Error: Couldn't match expected type ‘[Char]’ with actual type ‘Char’
 
-tests = [(root '$', True)]
+append xs ys = case xs of
+  [] -> ys
+  (x:xs') -> x: append xs' ys
+
+reverse2 xs = case xs of
+  [] -> []
+  (x:xs') -> append (reverse2 xs') [x]
+
+revacc xs as = case xs of
+  [] -> []
+  (x:xs') -> revacc xs' (x:as)
+
+revacc' xs = revacc xs []
+
+root = revacc'
+
+-- tests = [(root [1,2,3], [3,2,1])]
+tests = [(root [1,2,3], [])]
