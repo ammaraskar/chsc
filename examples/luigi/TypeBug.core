@@ -19,7 +19,13 @@ revacc xs as = case xs of
 
 revacc' xs = revacc xs []
 
-root = revacc'
+inc x = x + 1
+
+-- root = revacc'
+root x y = ( map inc [1,2,x], map not [True, y] )
+
+  -- in (map (+1) [1, 2, 3], map not [True, False])
 
 -- tests = [(root [1,2,3], [3,2,1])]
-tests = [(root [1,2,3], [])]
+-- tests = [(root [1,2,3], [])]
+tests = [(root 4 False, ([2,3,4], [False, True]))]
