@@ -4,11 +4,15 @@
 module Termination.Terminate where
 
 import Utilities
+import StaticFlags (wINDOW_SIZE, fPP, bF_BITS, sIZE_CACHE_SIZE)
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Traversable as Traversable
 import Data.Monoid
 
+import qualified Data.BloomFilter as BF
+import qualified Data.BloomFilter.Easy as BFE
+import Data.BloomFilter.Hash (Hashable, cheapHashes, hash32)
 import qualified Data.IntSet as IS
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
@@ -16,7 +20,6 @@ import qualified Data.Set as S
 import qualified Data.Tree as T
 
 import Unsafe.Coerce
-
 
 -- | Predicate that states that there exists a finite number of values distinguishable by (==) for the given type
 class Eq a => Finite a where
@@ -281,4 +284,46 @@ mkHistory (WQO (prepare :: a -> repr) embed) = History $ go []
       | why:_ <- [why | prev <- seen, Just why <- [prev `embed` here]]
       = Stop why
       | otherwise
-      = Continue $ History $ go (here : seen)
+      = Continue $ History $ go (take wINDOW_SIZE (here:seen))
+
+data Bloomier a b = Bloomier (BF.Bloom a) (IM.IntMap b)
+
+-- like mkHistory but doesn't store the history :-)
+{-# INLINE mkHistory' #-}
+mkHistory' :: forall a why. Hashable a => (WQO a why) -> (a -> Int) -> (a -> why) -> History a why
+mkHistory' (WQO (prepare :: a -> repr) embed) sizeof mkWhy = History $ go (Bloomier bfEmpty IM.empty) []
+  where
+    bfEmpty = BF.empty (cheapHashes numHashes) numBits
+    (numBits, numHashes) = BFE.suggestSizing bF_BITS fPP
+
+    -- is the state in the filter
+    -- and does it have a smaller size?
+    elem here (Bloomier b m) = do
+      if BF.elem here b
+         then do
+           let n = sizeof here
+           case IM.lookup (hash here) m of
+             Just n' | n' <= n -> True
+             _ -> False
+         else
+           False
+
+    hash here = (fromIntegral $ hash32 here) `mod` sIZE_CACHE_SIZE
+
+    ins here (Bloomier b m) = (Bloomier b' m')
+        where b' = BF.insert here b
+              m' = IM.insert (hash here) (sizeof here) m
+
+    -- go :: (Bloomier a) -> a -> TermRes a why
+    go bloom seen here
+      | elem here bloom = trace ("hit in BF") $ go' seen here
+      | otherwise = trace ("missed in BF") $ Continue $ History $ go (ins here bloom) (take wINDOW_SIZE (here:seen))
+
+    -- hit in the BF, so should Stop, but look at the history
+    -- to see how we should generalise
+    go' seen here
+      | why:_ <- [why | prev <- seen, Just why <- [(prepare prev) `embed` (prepare here)]]
+      = trace ("found embedding") $ Stop why
+      | otherwise
+      = trace ("did not find embedding") $ Stop (mkWhy here)
+

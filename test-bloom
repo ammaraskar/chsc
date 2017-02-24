@@ -1,0 +1,33 @@
+# Note: --bfsize=1000 vs 100 makes no difference
+# Note: --szsize=32 vs 64 vs 128 makes no difference
+time ./test-all
+time ./test-all --bloom --hist=0
+time ./test-all --bloom --hist=1
+time ./test-all --bloom --hist=2
+time ./test-all --bloom --hist=3
+time ./test-all --bloom --hist=4
+time ./test-all --bloom --hist=5
+
+time ./test-all --tag-collection=bags-strong
+time ./test-all --bloom --hist=0 --tag-collection=bags-strong
+time ./test-all --bloom --hist=1 --tag-collection=bags-strong
+time ./test-all --bloom --hist=2 --tag-collection=bags-strong
+time ./test-all --bloom --hist=3 --tag-collection=bags-strong
+time ./test-all --bloom --hist=4 --tag-collection=bags-strong
+time ./test-all --bloom --hist=5 --tag-collection=bags-strong
+
+time ./test-all --tag-collection=bags
+time ./test-all --bloom --hist=0 --tag-collection=bags
+time ./test-all --bloom --hist=1 --tag-collection=bags
+time ./test-all --bloom --hist=2 --tag-collection=bags
+time ./test-all --bloom --hist=3 --tag-collection=bags
+time ./test-all --bloom --hist=4 --tag-collection=bags
+time ./test-all --bloom --hist=5 --tag-collection=bags
+
+time ./test-all --no-reduce-termination
+time ./test-all --bloom --hist=0 --no-reduce-termination
+time ./test-all --bloom --hist=1 --no-reduce-termination
+time ./test-all --bloom --hist=2 --no-reduce-termination
+time ./test-all --bloom --hist=3 --no-reduce-termination
+time ./test-all --bloom --hist=4 --no-reduce-termination
+time ./test-all --bloom --hist=5 --no-reduce-termination

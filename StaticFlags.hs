@@ -17,6 +17,21 @@ aRGS = unsafePerformIO getArgs
 cODE_IDENTIFIER :: String
 cODE_IDENTIFIER = head $ lines $ unsafePerformIO (readProcess "git" ["log", "--format=%H", "-1"] "")
 
+bLOOM :: Bool
+bLOOM = "--bloom" `elem` aRGS
+
+sIZE_CACHE_SIZE :: Int
+sIZE_CACHE_SIZE = fromMaybe 32 $ listToMaybe [read val | arg <- aRGS, Just val <- [stripPrefix "--szsize=" arg]]
+
+bF_BITS :: Int
+bF_BITS = fromMaybe 1024 $ listToMaybe [read val | arg <- aRGS, Just val <- [stripPrefix "--bfsize=" arg]]
+
+fPP :: Double
+fPP = 0.01
+
+wINDOW_SIZE :: Int
+wINDOW_SIZE = fromMaybe (if bLOOM then 0 else 100000) $ listToMaybe [read val | arg <- aRGS, Just val <- [stripPrefix "--hist=" arg]]
+
 rUN_IDENTIFIER :: String
 rUN_IDENTIFIER = intercalate " " [filter (/= '-') arg | '-':'-':arg <- aRGS]
 

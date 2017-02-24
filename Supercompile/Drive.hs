@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, TupleSections, PatternGuards, BangPatterns, RankNTypes #-}
+{-# LANGUAGE ViewPatterns, TupleSections, PatternGuards, BangPatterns, RankNTypes, TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 module Supercompile.Drive (SCStats(..), supercompile) where
 
@@ -19,7 +19,8 @@ import Evaluator.Residualise
 import Evaluator.Syntax
 
 import Termination.Extras
-import Termination.TagBag
+import Termination.TagBag hiding (stateTags)
+import qualified Termination.TagBag as TB
 import Termination.TagGraph
 import Termination.TagSet
 import Termination.Terminate
@@ -35,7 +36,9 @@ import qualified Data.Map as M
 import Data.Monoid
 import Data.Ord
 import qualified Data.Set as S
+import qualified Data.IntMap as IM
 
+import Data.BloomFilter.Hash (Hashable(..))
 
 -- The termination argument is a but subtler due to HowBounds but I think it still basically works.
 -- Key to the modified argument is that tieback cannot be prevented by any HeapBinding with HowBound /= LambdaBound:
@@ -43,6 +46,21 @@ import qualified Data.Set as S
 rEDUCE_WQO :: WQO State Generaliser
 rEDUCE_WQO | not rEDUCE_TERMINATION_CHECK = postcomp (const generaliseNothing) unsafeNever
            | otherwise                    = wQO
+
+instance {-# OVERLAPS #-} Hashable State where
+  hashIO32 state salt = hashIO32 (stateTags state) salt
+
+instance Hashable RollbackScpM where
+  hashIO32 _ salt = return salt
+
+instance Hashable (SpecM ()) where
+  hashIO32 _ salt = return salt
+
+-- the bag size is the sum of the element counts
+bAGSIZE :: State -> Int
+bAGSIZE = (IM.foldr (+) 0) . TB.stateTags
+
+noGEN (s,x) = (generaliseNothing, x)
 
 wQO :: WQO State Generaliser
 wQO = wqo2
@@ -76,12 +94,14 @@ instance Monoid SCStats where
 
 
 supercompile :: Term -> (SCStats, Term)
-supercompile e = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ sc (mkHistory (extra wQO)) S.empty state
+supercompile e = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ sc hist S.empty state
   where input_fvs = annedTermFreeVars anned_e
         state = normalise ((bLOAT_FACTOR - 1) * annedSize anned_e, Heap (M.fromDistinctAscList anned_h_kvs) reduceIdSupply, [], (mkIdentityRenaming $ S.toAscList input_fvs, anned_e))
 
         (tag_ids, anned_h_kvs) = mapAccumL (\tag_ids x' -> let (tag_ids', i) = stepIdSupply tag_ids in (tag_ids', (x', environmentallyBound (mkTag (hashedId i))))) tagIdSupply (S.toList input_fvs)
         anned_e = toAnnedTerm tag_ids e
+        hist | bLOOM = mkHistory' (extra wQO) (bAGSIZE . fst) noGEN
+             | otherwise = mkHistory (extra wQO)
 
 --
 -- == Bounded multi-step reduction ==
@@ -203,7 +223,10 @@ speculate speculated (stats, (deeds, Heap h ids, k, in_e)) = (M.keysSet h, (stat
     (h_values, h_non_values) = M.partition (maybe False (termIsValue . snd) . heapBindingTerm) h
     (h_non_values_unspeculated, h_non_values_speculated) = (h_non_values `exclude` speculated, h_non_values `restrict` speculated)
 
-    (stats', deeds', h_speculated_ok, h_speculated_failure, ids') = runSpecM (speculateManyMap (mkHistory (extra wQO)) h_non_values_unspeculated) (stats, deeds, h_values, M.empty, ids)
+    (stats', deeds', h_speculated_ok, h_speculated_failure, ids') = runSpecM (speculateManyMap hist h_non_values_unspeculated) (stats, deeds, h_values, M.empty, ids)
+
+    hist | bLOOM = mkHistory' (extra wQO) (bAGSIZE . fst) noGEN
+         | otherwise = mkHistory (extra wQO)
 
     speculateManyMap hist = speculateMany hist . concatMap M.toList . topologicalSort heapBindingFreeVars
     speculateMany hist = mapM_ (speculateOne hist)
@@ -250,7 +273,7 @@ catchSpecM :: ((forall b. SpecM b) -> SpecM ()) -> SpecM () -> SpecM ()
 catchSpecM mx mcatch = SpecM $ \s k -> unSpecM (mx (SpecM $ \_s _k -> unSpecM mcatch s k)) s k
 
 reduce :: State -> (SCStats, State)
-reduce orig_state = go (mkHistory (extra rEDUCE_WQO)) orig_state
+reduce orig_state = go hist orig_state
   where
     -- NB: it is important that we ensure that reduce is idempotent if we have rollback on. I use this property to improve memoisation.
     go hist state = -- traceRender ("reduce:step", pPrintFullState state) $
@@ -259,6 +282,10 @@ reduce orig_state = go (mkHistory (extra rEDUCE_WQO)) orig_state
         Just state' -> case terminate hist (state, state) of
           Continue hist'         -> go hist' state'
           Stop (_gen, old_state) -> traceRender "reduce-stop" $ (mempty { stat_reduce_stops = 1 }, if rEDUCE_ROLLBACK then old_state else state') -- TODO: generalise?
+
+    hist | not rEDUCE_TERMINATION_CHECK = mkHistory (extra rEDUCE_WQO)
+         | bLOOM = mkHistory' (extra rEDUCE_WQO) (bAGSIZE . fst) noGEN
+         | otherwise = mkHistory (extra rEDUCE_WQO)
 
 
 --

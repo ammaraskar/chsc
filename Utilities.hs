@@ -38,6 +38,8 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import qualified Data.Foldable as Foldable
 import qualified Data.Traversable as Traversable
 
+import Data.BloomFilter.Hash (Hashable(..))
+
 import Debug.Trace
 
 import Text.PrettyPrint.HughesPJClass hiding (render, int, float, char, first)
@@ -185,6 +187,14 @@ newtype Fin = Fin { unFin :: Int } deriving (Eq, Ord, Show, NFData, Pretty)
 type FinSet = IS.IntSet
 type FinMap = IM.IntMap
 
+instance Hashable Fin where
+  hashIO32 (Fin a) salt = hashIO32 a salt
+
+instance Hashable FinSet where
+  hashIO32 m salt = foldM (flip hashIO32) salt (IS.elems m)
+
+instance Hashable a => Hashable (FinMap a) where
+  hashIO32 m salt = foldM (flip hashIO32) salt m
 
 data Tag = TG { tagFin :: Fin, tagOccurrences :: Nat } deriving (Eq, Ord, Show)
 
