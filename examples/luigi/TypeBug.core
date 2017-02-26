@@ -1,31 +1,41 @@
 #include "../Prelude.core"
 
--- root :: Char -> Bool
--- root c = (Prelude.==) c '$' ||
---   -- elem [c] ["$"]  -- OK
---   [c]=="$"  -- Error: Couldn't match expected type ‘[Char]’ with actual type ‘Char’
+eqList :: [a] -> [a] -> Bool
+eqList xs ys = case xs of
+  [] -> case ys of
+    [] -> True
+    _ -> False
+  (x:xs') -> case ys of
+    (y:ys') -> x == y && eqList xs' ys'
+    _ -> False
 
-append xs ys = case xs of
-  [] -> ys
-  (x:xs') -> x: append xs' ys
+root :: Char -> Bool
+root c = c == '$' ||
+  -- elem [c] ["$"]  -- OK
+  [c] `eqList` "$"  -- Error: Couldn't match expected type ‘[Char]’ with actual type ‘Char’
 
-reverse2 xs = case xs of
-  [] -> []
-  (x:xs') -> append (reverse2 xs') [x]
+-- append xs ys = case xs of
+--   [] -> ys
+--   (x:xs') -> x: append xs' ys
 
-revacc xs as = case xs of
-  [] -> []
-  (x:xs') -> revacc xs' (x:as)
+-- reverse2 xs = case xs of
+--   [] -> []
+--   (x:xs') -> append (reverse2 xs') [x]
 
-revacc' xs = revacc xs []
+-- revacc xs as = case xs of
+--   [] -> []
+--   (x:xs') -> revacc xs' (x:as)
 
-inc x = x + 1
+-- revacc' xs = revacc xs []
 
--- root = revacc'
-root x y = ( map inc [1,2,x], map not [True, y] )
+-- inc x = x + 1
 
-  -- in (map (+1) [1, 2, 3], map not [True, False])
+-- -- root = revacc'
+-- root x y = ( map inc [1,2,x], map not [True, y] )
+
+--   -- in (map (+1) [1, 2, 3], map not [True, False])
 
 -- tests = [(root [1,2,3], [3,2,1])]
 -- tests = [(root [1,2,3], [])]
-tests = [(root 4 False, ([2,3,4], [False, True]))]
+-- tests = [(root 4 False, ([2,3,4], [False, True]))]
+tests = [(root '$', True)]

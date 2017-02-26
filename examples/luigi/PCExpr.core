@@ -93,8 +93,10 @@ satisfy msg pred = (>>=!) item (\c ->
     then return' c
     else Parser (const (Error (c: "expecting  got " ++ msg ))))
 
+elemChar = elem' (==)
+
 oneOf :: String -> Parser Char
-oneOf s = satisfy s (`elem` s)
+oneOf s = satisfy s (`elemChar` s)
 
 char :: Char -> Parser Char
 char c = satisfy [c] (c ==)
@@ -278,8 +280,24 @@ sat p pred = (>>=!) p (\s -> if pred s
     then return' s
     else Parser (const (Error "expecting %s got %s")))
 
+eqList :: Eq a => [a] -> [a] -> Bool
+eqList xs ys = case xs of
+  [] -> case ys of
+    [] -> True
+    _ -> False
+  (x:xs') -> case ys of
+    (y:ys') -> x == y && eqList xs' ys'
+    _ -> False
+
+elem' :: (a -> a -> Bool) -> a -> [a] -> Bool
+elem' eq x ys = case ys of
+  [] -> False
+  (y:ys') -> x `eq` y || elem' eq x ys'
+
+elemList' = elem' eqList
+
 varnamep :: Parser Var
-varnamep = sat varid (not . (`elem` keywords))
+varnamep = sat varid (not . (`elemList'` keywords))
   where keywords = ["let", "in", "case", "of"]
 
 varid :: Parser Var
