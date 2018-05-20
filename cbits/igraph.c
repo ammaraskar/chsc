@@ -1,4 +1,4 @@
-#include <igraph.h>
+#include <igraph/igraph.h>
 
 static igraph_bool_t find_callback(const igraph_vector_t *map12 /* large to small */, const igraph_vector_t *map21 /* small to large */, int (*callback)(double*)) {
     return (0 != callback(VECTOR(*map21)));

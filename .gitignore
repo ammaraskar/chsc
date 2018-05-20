@@ -14,5 +14,7 @@ dist-profiling/
 *.hi
 *.o
 
+.stack-work/
+
 # Python stuff
 *.pyc
