@@ -27,11 +27,15 @@ At the time of writing, there are no known bugs in the `master` branch of the su
 Using
 ---
 
-If you want to try out the CHSC, use the `test` script:
+The project can be built using stack by using:
 
-    $ ./test examples/toys/MapMapFusion.core
+    $ stack build
 
-This will print output similar to the following:
+Once built, the supercompiler can be executed like so
+
+    $ stack exec supercompile examples/toys/MapMapFusion.core
+
+This will print output and the end similar to the following:
 
     examples/toys/MapMapFusion.core
     mapmapfusion & 0.0s & 0.50 & 0.82 & 1.02 \\
