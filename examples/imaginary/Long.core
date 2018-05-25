@@ -1,0 +1,10 @@
+#include "../Prelude.core"
+
+func n x = if n == 0 then x else (func (n - 1) x)
+
+root x = func 100 x
+
+tests = [
+    (root 10, 10),
+    (root 30, 30)
+  ]
