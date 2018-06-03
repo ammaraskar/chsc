@@ -74,9 +74,26 @@ instance Monoid SCStats where
         stat_sc_stops = stat_sc_stops stats1 + stat_sc_stops stats2
       }
 
+terminateEarly :: History State String
+terminateEarly = History $ (\_ -> Stop "pls no more")
+
+terminateNever :: History State String
+terminateNever = History $ (\_ -> Continue terminateNever)
+
+superc :: History State String -> AlreadySpeculated -> State -> ScpM (Deeds, Out FVedTerm)
+superc' :: History State String -> AlreadySpeculated -> State -> State -> ScpM (Deeds, Out FVedTerm)
+superc h = memo (superc' h)
+superc' hist _ state state' = case terminate hist state' of
+  Continue hist' -> do
+      traceRenderScpM ("reduce end (continue)", pPrintFullState state')
+      -- addStats stats
+      split state' (superc hist' S.empty)
+  Stop reason -> do
+      traceRenderScpM ("sc-stop", reason)
+      split state (superc hist S.empty)
 
 supercompile :: Term -> (SCStats, Term)
-supercompile e = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ sc (mkHistory (extra wQO)) S.empty state
+supercompile e = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ superc terminateNever S.empty state
   where input_fvs = annedTermFreeVars anned_e
         state = normalise ((bLOAT_FACTOR - 1) * annedSize anned_e, Heap (M.fromDistinctAscList anned_h_kvs) reduceIdSupply, [], (mkIdentityRenaming $ S.toAscList input_fvs, anned_e))
 
