@@ -94,7 +94,7 @@ testOne (ghc_way, sc_way) file = do
                       (after_code, after_res) <- runCompiled template wrapper e' test_e
 
                       -- Save a copy of the supercompiled code somewhere so I can consult it at my leisure
-                      let output_dir = "output" </> cODE_IDENTIFIER </> rUN_IDENTIFIER
+                      let output_dir = "output"
                       createDirectoryIfMissing True (takeDirectory $ output_dir </> file)
                       writeFile (output_dir </> replaceExtension file ".hs") (unlines ["-- Code: " ++ cODE_IDENTIFIER, "-- Run: " ++ rUN_IDENTIFIER, "", after_code])
 

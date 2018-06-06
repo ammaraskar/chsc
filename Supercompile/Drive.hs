@@ -80,6 +80,15 @@ terminateEarly = History $ (\_ -> Stop "pls no more")
 terminateNever :: History State String
 terminateNever = History $ (\_ -> Continue terminateNever)
 
+specialTerminate = History $ (\s -> if terminateDecision s 
+                                    then Stop "halt in the name of the jarl"
+                                    else Continue specialTerminate)
+  where terminateDecision :: State -> Bool
+        terminateDecision (_, _, _, (_, qa)) =
+          case (annee qa) of
+            Answer (Literal _) -> trace ("Denying literal") True
+            _ -> trace ("Question" ++ show qa) False
+
 superc :: History State String -> AlreadySpeculated -> State -> ScpM (Deeds, Out FVedTerm)
 superc' :: History State String -> AlreadySpeculated -> State -> State -> ScpM (Deeds, Out FVedTerm)
 superc h = memo (superc' h)

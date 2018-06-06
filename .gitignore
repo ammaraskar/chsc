@@ -18,3 +18,4 @@ dist-profiling/
 
 # Python stuff
 *.pyc
+tmp
