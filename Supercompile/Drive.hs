@@ -77,8 +77,19 @@ instance Monoid SCStats where
 terminateEarly :: History State String
 terminateEarly = History $ (\_ -> Stop "pls no more")
 
+heapFromState :: State -> Heap
+heapFromState (_, h, _, _) = h
+
+terminateCounter :: Integer -> Integer -> History State String
+terminateCounter i end = History $ stop
+  where stop _ = trace ("History id: " ++ (show i) ++ "/" ++ (show end)) $
+                  if i == end then
+                    Stop "halting on specified number"
+                  else
+                    Continue (terminateCounter (i + 1) end)
+
 terminateNever :: History State String
-terminateNever = History $ (\_ -> Continue terminateNever)
+terminateNever = History $ (\s -> trace (show (heapFromState s)) Continue terminateNever)
 
 specialTerminate = History $ (\s -> if terminateDecision s 
                                     then Stop "halt in the name of the jarl"
@@ -101,8 +112,8 @@ superc' hist _ state state' = case terminate hist state' of
       traceRenderScpM ("sc-stop", reason)
       split state (superc hist S.empty)
 
-supercompile :: Term -> (SCStats, Term)
-supercompile e = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ superc terminateNever S.empty state
+supercompile :: Term -> Integer -> (SCStats, Term)
+supercompile e terminator = traceRender ("all input FVs", input_fvs) $ second (fVedTermToTerm . if pRETTIFY then prettify else id) $ runScpM $ liftM snd $ superc (terminateCounter 0 terminator) S.empty state
   where input_fvs = annedTermFreeVars anned_e
         state = normalise ((bLOAT_FACTOR - 1) * annedSize anned_e, Heap (M.fromDistinctAscList anned_h_kvs) reduceIdSupply, [], (mkIdentityRenaming $ S.toAscList input_fvs, anned_e))
 

@@ -459,7 +459,7 @@ optimiseLetBinds opt leftover_deeds bracketeds_heap fvs' = -- traceRender ("opti
   where
     go leftover_deeds bracketeds_deeded_heap_not_resid xes_resid resid_fvs
       | M.null h_resid = return (leftover_deeds, bracketeds_deeded_heap_not_resid, resid_fvs, xes_resid)
-      | otherwise = {- traceRender ("optimiseSplit", xs_resid') $ -} do
+      | otherwise = traceRender ("optimiseSplit", xs_resid') $ do
         -- Recursively drive the new residuals arising from the need to bind the resid_fvs
         (leftover_deeds, es_resid') <- optimiseMany (optimiseBracketed opt) (leftover_deeds, bracks_resid)
         let extra_resid_fvs' = S.unions (map fvedTermFreeVars es_resid')

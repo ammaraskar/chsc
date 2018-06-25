@@ -6,6 +6,8 @@ import Core.Size
 import Core.Syntax
 import Core.Parser
 
+import Control.Exception (try)
+
 import Supercompile.Drive
 
 import GHC
@@ -20,6 +22,7 @@ import System.Directory
 import System.Environment
 import System.FilePath ((</>), dropExtension, takeFileName, takeDirectory, replaceExtension, takeBaseName)
 import System.IO
+import System.IO.Error (IOError)
 import System.Timeout
 
 import Numeric (showFFloat)
@@ -64,6 +67,12 @@ splitModule xes = (letRecSmart (transitiveInline (S.singleton root)) (var root),
     root    = expectJust "No root" $ findBinding "root"
     mb_test = findBinding "tests"
 
+readTerminationNumber :: String -> IO (Integer)
+readTerminationNumber file = do
+    contentsOrExc <- try $ readFile file
+    case (contentsOrExc :: Either IOError String) of
+        Left _ -> return (-1)
+        Right contents -> return $ (read contents :: Integer)
 
 testOne :: Ways -> FilePath -> IO (Maybe String)
 testOne (ghc_way, sc_way) file = do
@@ -83,8 +92,9 @@ testOne (ghc_way, sc_way) file = do
 
               return $ fmap (,termSize e,Nothing) before_res
             try_sc = do
+              terminateOn <- readTerminationNumber (file ++ ".terminate")
               rnf e `seq` return ()
-              let (stats, e') = supercompile e
+              let (stats, e') = supercompile e terminateOn
               mb_super_t <- timeout (tIMEOUT_SECONDS * 1000000) (time_ (rnf e' `seq` return ()))
 
               case mb_super_t of
