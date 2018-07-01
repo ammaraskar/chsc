@@ -61,8 +61,11 @@ setupBenchmarkingEnv file = do
 
 benchmarkingMain :: String -> IO ()
 benchmarkingMain file = defaultMain [
-    env (setupBenchmarkingEnv file) $ \ ~(e) -> bgroup "main" 
-        [bench "supercompile" $ whnf supercompile e] 
+    env (setupBenchmarkingEnv file) $ \ ~(e) -> bgroup "main"
+        [
+            bench "supercompile" $ nf supercompile e,
+            bench "compile" $ nfIO $ onlyCompile file
+        ] 
     ]
 
 test :: Ways -> [FilePath] -> IO ()

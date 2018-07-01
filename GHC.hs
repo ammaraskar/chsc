@@ -125,6 +125,12 @@ ghcVersion = do
     (ExitSuccess, compile_out, "") <- readProcessWithExitCode gHC ["--version"] ""
     return $ map read . seperate '.' . last . words $ compile_out
 
+onlyCompile :: String -> IO ExitCode
+onlyCompile hs_file = do
+    (ec, _, _) <- readProcessWithExitCode gHC (["--make", hs_file, "-fforce-recomp", "-o", "/dev/null"] ++ [if nO_OPTIMISATIONS then "-O0" else "-O2"] ++ gHC_OPTIONS 
+        ++ ["-ddump-simpl" | not qUIET] ++ ["-ticky" | tICKY]) ""
+    return ec
+
 runCompiled :: String -> String -> Term -> Term -> IO (String, Either String (Bytes, Seconds, Bytes, Seconds))
 runCompiled templateName wrapper e test_e = withTempFile (takeBaseName templateName) $ \(exe_file, exe_h) -> do
     hClose exe_h
