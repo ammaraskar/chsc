@@ -35,46 +35,11 @@ testingModule :: String -> Term -> Term -> String
 testingModule wrapper e test_e = unlines $
     languageLine :
     "module Main(main) where" :
-    "import Data.Time.Clock.POSIX (getPOSIXTime)" :
-    [wrapper] ++
+    "import Criterion.Main" :
     "" :
-    "-- | A class of types that can be fully evaluated." :
-    "class NFData a where" :
-    "    rnf :: a -> ()" :
-    "    rnf a = a `seq` ()" :
-    "" :
-    "instance NFData Int " :
-    "instance NFData Integer" :
-    "instance NFData Float" :
-    "instance NFData Double" :
-    "" :
-    "instance NFData Char" :
-    "instance NFData Bool" :
-    "instance NFData ()" :
-    "" :
-    "instance NFData a => NFData (Maybe a) where" :
-    "    rnf Nothing  = ()" :
-    "    rnf (Just x) = rnf x" :
-    "" :
-    "instance (NFData a, NFData b) => NFData (Either a b) where" :
-    "    rnf (Left x)  = rnf x" :
-    "    rnf (Right y) = rnf y" :
-    "" :
-    "instance NFData a => NFData [a] where" :
-    "    rnf [] = ()" :
-    "    rnf (x:xs) = rnf x `seq` rnf xs" :
-    "" :
-    "instance (NFData a, NFData b) => NFData (a,b) where" :
-    "  rnf (x,y) = rnf x `seq` rnf y" :
-    "" :
-    "time_ :: IO a -> IO Double" :
-    "time_ act = do { start <- getTime; act; end <- getTime; return $! (Prelude.-) end start }" :
-    "" :
-    "getTime :: IO Double" :
-    "getTime = (fromRational . toRational) `fmap` getPOSIXTime" :
-    "" :
-    "main = do { t <- time_ (rnf results `seq` return ()); print t }" :
-    "  where results = map assertEq tests" :
+    "main = defaultMain [" :
+    "  bgroup \"main\" [bench \"tests\" $ nf (map assertEq) tests]" :
+    "  ]" :
     "" :
     "assertEq :: (Show a, Eq a) => (a, a) -> ()" :
     "assertEq (x, y) = if x == y || True then () else error (\"FAIL! \" ++ show x ++ \", \" ++ show y)" :
