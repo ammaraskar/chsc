@@ -25,15 +25,23 @@ import System.IO
 import System.IO.Error (IOError)
 import System.Timeout
 
+import Criterion.Main
+
 import Numeric (showFFloat)
 
 
 type Ways = (Bool, Bool)
 
-
--- The Cambridge Haskell Supercompiler (CHSC)
 main :: IO ()
 main = do
+    env_var <- lookupEnv "BENCHMARK_FILE"
+    case env_var of
+        Just file -> benchmarkingMain file
+        Nothing -> normalMain
+
+-- The Cambridge Haskell Supercompiler (CHSC)
+normalMain :: IO ()
+normalMain = do
     hPutStrLn stderr $ "Welcome to the Cool Cambridge Haskell Supercompiler (git log: " ++ cODE_IDENTIFIER ++ ")"
     (flags, args) <- fmap (partition ("-" `isPrefixOf`)) getArgs
     putStrLn $ "Flags: " ++ show flags ++ " Args: " ++ show args
@@ -42,6 +50,20 @@ main = do
       ("ghc":files) -> test (True,  False) files
       ("raw":files) -> test (False, True)  files
       files         -> test (True,  True)  files
+
+setupBenchmarkingEnv :: String -> IO (Term)
+setupBenchmarkingEnv file = do
+    putStrLn $ "Supercompiling " ++ file
+    (wrapper, binds) <- parse file
+    case splitModule binds of
+        (_, Nothing) -> hPutStrLn stderr "Skipping: no tests" >> (error "no tests found")
+        (e, Just test_e) -> return e
+
+benchmarkingMain :: String -> IO ()
+benchmarkingMain file = defaultMain [
+    env (setupBenchmarkingEnv file) $ \ ~(e) -> bgroup "main" 
+        [bench "supercompile" $ whnf supercompile e] 
+    ]
 
 test :: Ways -> [FilePath] -> IO ()
 test ways files = do

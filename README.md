@@ -57,6 +57,15 @@ Naturally, the suffix of this file name varies with the file name that `test` wa
 
 You can use `test` with more than one filename if you would like.
 
+Benchmarking Compile Time
+---
+
+We use criterion to benchmark supercompilation times, in order to not conflict with
+its own CLI parameters, the file to be benchmarked must be passed as an environmental
+variable. For example:
+
+`env BENCHMARK_FILE=examples/toys/MapMapFusion.core stack exec -- supercompile`
+
 Paper
 ---
 

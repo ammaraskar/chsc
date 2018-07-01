@@ -31,5 +31,6 @@ Executable supercompile
                  cpphs >= 1.11,
                  lattices >= 1.2,
                  graph-wrapper >= 0.2.3,
-                 array >= 0.3
+                 array >= 0.3,
+                 criterion >= 1.0.0.0
   Ghc-Options: -rtsopts
