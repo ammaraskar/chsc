@@ -31,6 +31,8 @@ The project can be built using stack by using:
 
     $ stack build
 
+(You might need to download igraph, on ubuntu the package is `libigraph0-dev`)
+
 Once built, the supercompiler can be executed like so
 
     $ stack exec supercompile examples/toys/MapMapFusion.core
