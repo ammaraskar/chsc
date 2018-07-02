@@ -33,4 +33,4 @@ Executable supercompile
                  graph-wrapper >= 0.2.3,
                  array >= 0.3,
                  criterion >= 1.0.0.0
-  Ghc-Options: -rtsopts
+  Ghc-Options: -rtsopts -O2

@@ -16,6 +16,8 @@ dist-profiling/
 
 .stack-work/
 
+statistics/
+
 # Python stuff
 *.pyc
 tmp
