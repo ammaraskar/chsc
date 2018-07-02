@@ -4,15 +4,7 @@ import subprocess
 import os
 from pathlib import Path
 
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: runBenchmark.py <file> <time>")
-        sys.exit(1)
-
-    path = Path(sys.argv[1])
-    file_name = path.name
-    print("[+] Benchmarking compile time for " + file_name)
-
+def compile(file_name):
     command = ["stack", "exec", "--", 
                "supercompile", "--time-limit", sys.argv[2], 
                "--json", "statistics/" + file_name + ".compile.json"]
@@ -25,7 +17,19 @@ def main():
 
     command = ["stack", "exec", "--", "supercompile", sys.argv[1]]
     print("> " + (" ".join(command)))
-    subprocess.check_call(command)
+    subprocess.call(command)
+
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: runBenchmark.py <file> <time>")
+        sys.exit(1)
+
+    path = Path(sys.argv[1])
+    file_name = path.name
+    print("[+] Benchmarking compile time for " + file_name)
+
+    if "--skip-compile" not in sys.argv:
+        compile(file_name)
 
     # Compile the regular program
     command = ["stack", "ghc", "--", "-O2", 
