@@ -23,6 +23,10 @@ def main():
         env=dict(os.environ, BENCHMARK_FILE=sys.argv[1])
     )
 
+    command = ["stack", "exec", "--", "supercompile", sys.argv[1]]
+    print("> " + (" ".join(command)))
+    subprocess.check_call(command)
+
     # Compile the regular program
     command = ["stack", "ghc", "--", "-O2", 
                "-o", "statistics/" + file_name + ".compiled", 
