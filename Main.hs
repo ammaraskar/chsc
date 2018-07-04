@@ -51,21 +51,19 @@ normalMain = do
       ("raw":files) -> test (False, True)  files
       files         -> test (True,  True)  files
 
-setupBenchmarkingEnv :: String -> IO (Term, Integer)
+setupBenchmarkingEnv :: String -> IO (Term)
 setupBenchmarkingEnv file = do
     putStrLn $ "Supercompiling " ++ file
     (wrapper, binds) <- parse file
     case splitModule binds of
         (_, Nothing) -> hPutStrLn stderr "Skipping: no tests" >> (error "no tests found")
-        (e, Just test_e) -> do
-            terminateOn <- readTerminationNumber (file ++ ".terminate")
-            return (e, terminateOn)
+        (e, Just test_e) -> return e
 
 benchmarkingMain :: String -> IO ()
 benchmarkingMain file = defaultMain [
-    env (setupBenchmarkingEnv file) $ \ ~(e, terminateOn) -> bgroup "main"
+    env (setupBenchmarkingEnv file) $ \ ~(e) -> bgroup "main"
         [
-            bench "supercompile" $ nf (supercompile e) terminateOn,
+            bench "supercompile" $ nf supercompile e,
             bench "compile" $ nfIO $ onlyCompile file
         ] 
     ]
@@ -119,9 +117,8 @@ testOne (ghc_way, sc_way) file = do
 
               return $ fmap (,termSize e,Nothing) before_res
             try_sc = do
-              terminateOn <- readTerminationNumber (file ++ ".terminate")
               rnf e `seq` return ()
-              let (stats, e') = supercompile e terminateOn
+              let (stats, e') = supercompile e
               mb_super_t <- timeout (tIMEOUT_SECONDS * 1000000) (time_ (rnf e' `seq` return ()))
 
               case mb_super_t of
