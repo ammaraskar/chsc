@@ -1,0 +1,12 @@
+mapTree f t = case t of
+    Leaf x -> Leaf (f x)
+    Branch l r -> Branch (mapTree f l) (mapTree f r)
+
+incTree t = mapTree (+1) t
+multTree t = mapTree (*2) t
+
+root t = multTree (incTree t)
+
+tests = [
+    (root (Branch (Leaf 1) (Leaf 2)), Branch (Leaf 3) (Leaf 4))
+  ]
