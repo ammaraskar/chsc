@@ -2,6 +2,7 @@
 import sys
 import subprocess
 import os
+import json
 from pathlib import Path
 
 def compile(file_name):
@@ -18,6 +19,30 @@ def compile(file_name):
     command = ["stack", "exec", "--", "supercompile", sys.argv[1]]
     print("> " + (" ".join(command)))
     subprocess.call(command)
+
+def memory_info(file_name):
+    command = ["statistics/" + file_name + ".compiled", "-n", "1", "+RTS", "-s"]
+    print("> " + (" ".join(command)))
+    output = subprocess.run(command, stderr=subprocess.PIPE).stderr.decode().splitlines()
+
+    bytes_line = [x for x in output if "bytes allocated" in x][0]
+    bytes_allocated = bytes_line.split()[0].replace(",", "")
+    comp_bytes_allocated = int(bytes_allocated)
+
+    command = ["statistics/" + file_name + ".supercompiled", "-n", "1", "+RTS", "-s"]
+    print("> " + (" ".join(command)))
+    output = subprocess.run(command, stderr=subprocess.PIPE).stderr.decode().splitlines()
+
+    bytes_line = [x for x in output if "bytes allocated" in x][0]
+    bytes_allocated = bytes_line.split()[0].replace(",", "")
+    supercomp_bytes_allocated = int(bytes_allocated)
+
+    with open("statistics/" + file_name + ".memory.json", "w") as f:
+        data = {
+            'supercompiled': supercomp_bytes_allocated,
+            'compiled': comp_bytes_allocated
+        }
+        json.dump(data, f)
 
 def main():
     if len(sys.argv) < 3:
@@ -62,6 +87,8 @@ def main():
                "--json", "statistics/" + file_name + ".supercompiled.json"]
     print("> " + (" ".join(command)))
     subprocess.check_call(command)
+
+    memory_info(file_name)
 
 if __name__ == "__main__":
     main()
