@@ -36,6 +36,7 @@ testingModule wrapper e test_e = unlines $
     languageLine :
     "module Main(main) where" :
     "import Criterion.Main" :
+    [wrapper] ++
     "" :
     "main = defaultMain [" :
     "  bgroup \"main\" [bench \"tests\" $ nf (map assertEq) tests]" :
