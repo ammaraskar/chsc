@@ -1,0 +1,27 @@
+#include "../Prelude.core"
+
+payL n coins acc =
+    case coins of
+        [] -> []
+        ((c,q):coins) -> 
+            case n of
+                0 -> [acc]
+                val -> if c > val 
+                        then (payL val coins acc)
+                        else (left ++ right)
+                        where 
+                            left = payL (val - c) coins' (c:acc)
+                            right = payL val coins acc
+                            where
+                                coins' = if q == 1
+                                            then coins
+                                            else (c, q - 1):coins
+
+root = payL
+
+tests = [
+    (root 7 [(250,5), (100,8), (25,8), (10,9), (5,12), (1,17)] [], [])
+    ]
+
+
+        
