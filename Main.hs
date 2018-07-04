@@ -51,19 +51,21 @@ normalMain = do
       ("raw":files) -> test (False, True)  files
       files         -> test (True,  True)  files
 
-setupBenchmarkingEnv :: String -> IO (Term)
+setupBenchmarkingEnv :: String -> IO (Term, Integer)
 setupBenchmarkingEnv file = do
     putStrLn $ "Supercompiling " ++ file
     (wrapper, binds) <- parse file
     case splitModule binds of
         (_, Nothing) -> hPutStrLn stderr "Skipping: no tests" >> (error "no tests found")
-        (e, Just test_e) -> return e
+        (e, Just test_e) -> do
+            terminateOn <- readTerminationNumber (file ++ ".terminate")
+            return (e, terminateOn)
 
 benchmarkingMain :: String -> IO ()
 benchmarkingMain file = defaultMain [
-    env (setupBenchmarkingEnv file) $ \ ~(e) -> bgroup "main"
+    env (setupBenchmarkingEnv file) $ \ ~(e, terminateOn) -> bgroup "main"
         [
-            bench "supercompile" $ nf supercompile e,
+            bench "supercompile" $ nf (supercompile e) terminateOn,
             bench "compile" $ nfIO $ onlyCompile file
         ] 
     ]
